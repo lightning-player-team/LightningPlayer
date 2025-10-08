@@ -1,9 +1,18 @@
 import { StrictMode } from "react";
 import ReactDOM from "react-dom/client";
-import App from "./App";
+import { createBrowserRouter } from "react-router";
+import { RouterProvider } from "react-router/dom";
+import { Player } from "./Player";
+
+const router = createBrowserRouter([
+  {
+    path: "/",
+    element: <Player />,
+  },
+]);
 
 ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
   <StrictMode>
-    <App />
+    <RouterProvider router={router} />
   </StrictMode>
 );

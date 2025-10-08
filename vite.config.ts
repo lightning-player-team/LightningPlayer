@@ -1,13 +1,56 @@
-import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
+import { defineConfig } from "vite";
+import babel from "vite-plugin-babel";
 import eslintPlugin from "vite-plugin-eslint";
 
 const host = process.env.TAURI_DEV_HOST;
+
+const ReactCompilerConfig = {
+  // Skip components with errors instead of failing the build
+  panicThreshold: "none",
+  logger: {
+    logEvent(filename, event) {
+      switch (event.kind) {
+        case "CompileSuccess": {
+          console.log(`✅ Compiled: ${filename}`);
+          break;
+        }
+        case "CompileError": {
+          console.log(`❌ Skipped: ${filename}`);
+          console.error(`❌ Compilation failed: ${filename}`);
+          console.error(`Reason: ${event.detail.reason}`);
+
+          if (event.detail.description) {
+            console.error(`Details: ${event.detail.description}`);
+          }
+
+          if (event.detail.loc) {
+            const { line, column } = event.detail.loc.start;
+            console.error(`Location: Line ${line}, Column ${column}`);
+          }
+
+          if (event.detail.suggestions) {
+            console.error("Suggestions:", event.detail.suggestions);
+          }
+
+          break;
+        }
+        default: {
+        }
+      }
+    },
+  },
+};
 
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [
     react(),
+    babel({
+      babelConfig: {
+        plugins: [["babel-plugin-react-compiler", ReactCompilerConfig]],
+      },
+    }),
     eslintPlugin({
       cache: false,
       include: ["./src/**/*.js", "./src/**/*.jsx"],
