@@ -2,12 +2,19 @@ import { StrictMode } from "react";
 import ReactDOM from "react-dom/client";
 import { createBrowserRouter } from "react-router";
 import { RouterProvider } from "react-router/dom";
-import { Player } from "./Player";
+import { Home } from "./route-components/Home";
+import { Player } from "./route-components/Player";
+import { Root } from "./route-components/Root";
+import { ROUTES } from "./route-components/routes";
 
 const router = createBrowserRouter([
   {
-    path: "/",
-    element: <Player />,
+    path: ROUTES.root,
+    Component: Root,
+    children: [
+      { index: true, Component: Home },
+      { path: ROUTES.player, Component: Player },
+    ],
   },
 ]);
 

@@ -1,0 +1,11 @@
+{
+  "colors": {
+    "home": {
+      "background": "rgb(0, 0, 0)"
+    },
+    "text": {
+      "default": "rgb(241, 241, 241)",
+      "link": "rgb(62, 166, 255)"
+    }
+  }
+}
