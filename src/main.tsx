@@ -4,12 +4,14 @@ import { createBrowserRouter } from "react-router";
 import { RouterProvider } from "react-router/dom";
 import { Home } from "./route-components/Home";
 import { Player } from "./route-components/Player";
-import { Root } from "./route-components/Root";
+import { Root } from "./route-components/root/Root";
 import { ROUTES } from "./route-components/routes";
+import { RootErrorBoundary } from "./route-components/root/RootErrorBoundary";
 
 const router = createBrowserRouter([
   {
     path: ROUTES.root,
+    errorElement: <RootErrorBoundary />,
     Component: Root,
     children: [
       { index: true, Component: Home },
