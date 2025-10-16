@@ -6,6 +6,15 @@
     "text": {
       "default": "rgb(241, 241, 241)",
       "link": "rgb(62, 166, 255)"
+    },
+    "titleBar": {
+      "activeBackground": "rgb(31, 31, 31)",
+      "activeForeground": "rgb(204, 204, 204)",
+      "hoverBackground": "rgb(60, 60, 60)",
+      "hoverCloseBackground": "rgb(232, 17, 35)",
+      "hoverCloseForeground": "rgb(255, 255, 255)",
+      "pressedBackground": "rgb(80, 80, 80)",
+      "pressedCloseBackground": "rgb(196, 43, 28)"
     }
   }
 }

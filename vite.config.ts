@@ -1,6 +1,5 @@
 import react from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
-import babel from "vite-plugin-babel";
 import eslintPlugin from "vite-plugin-eslint";
 
 const host = process.env.TAURI_DEV_HOST;
@@ -36,6 +35,7 @@ const ReactCompilerConfig = {
           break;
         }
         default: {
+          /* empty */
         }
       }
     },
@@ -45,9 +45,8 @@ const ReactCompilerConfig = {
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [
-    react(),
-    babel({
-      babelConfig: {
+    react({
+      babel: {
         plugins: [["babel-plugin-react-compiler", ReactCompilerConfig]],
       },
     }),

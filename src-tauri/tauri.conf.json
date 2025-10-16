@@ -4,29 +4,30 @@
   "version": "0.1.0",
   "identifier": "i54cxy.temp",
   "build": {
+    "beforeBuildCommand": "pnpm build",
     "beforeDevCommand": "pnpm dev",
     "devUrl": "http://localhost:1420",
-    "beforeBuildCommand": "pnpm build",
     "frontendDist": "../dist"
   },
   "app": {
     "windows": [
       {
-        "width": 800,
-        "height": 600
+        "decorations": false,
+        "height": 600,
+        "width": 800
       }
     ],
     "security": {
-      "csp": null,
       "assetProtocol": {
         "enable": true,
         "scope": ["**"]
-      }
+      },
+      "csp": null
     }
   },
   "bundle": {
     "active": true,
-    "targets": "all",
-    "icon": ["icons/icon.ico"]
+    "icon": ["icons/icon.ico"],
+    "targets": "all"
   }
 }

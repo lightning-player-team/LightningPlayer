@@ -10,6 +10,15 @@ declare module "@emotion/react" {
         default: string;
         link: string;
       };
+      titleBar: {
+        activeBackground: string;
+        activeForeground: string;
+        hoverBackground: string;
+        hoverCloseBackground: string;
+        hoverCloseForeground: string;
+        pressedBackground: string;
+        pressedCloseBackground: string;
+      };
     };
   }
 }

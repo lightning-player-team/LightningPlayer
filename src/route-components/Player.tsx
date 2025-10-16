@@ -1,8 +1,8 @@
 import { convertFileSrc } from "@tauri-apps/api/core";
 import { open } from "@tauri-apps/plugin-dialog";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { FC, useCallback, useEffect, useRef, useState } from "react";
 
-export const Player = () => {
+export const Player: FC = () => {
   const [filePath, setFilePath] = useState<string>();
   const videoRef = useRef<HTMLVideoElement>(null);
 
