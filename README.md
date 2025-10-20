@@ -4,6 +4,8 @@ Follow the [Tauri documentation](https://v2.tauri.app/start/prerequisites/) to i
 
 Install Node.js as well since we're using React.
 
+Install pnpm following their [official docs](https://pnpm.io/installation).
+
 # Running the program
 
 Run
