@@ -18,6 +18,8 @@ declare module "@emotion/react" {
         hoverCloseForeground: string;
         pressedBackground: string;
         pressedCloseBackground: string;
+        inactiveBackground: string;
+        inactiveForeground: string;
       };
     };
   }

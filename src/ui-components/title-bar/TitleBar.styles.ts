@@ -4,7 +4,7 @@ export const TITLE_BAR_HEIGHT = 30;
 
 export const containerStyles = (theme: Theme) =>
   css({
-    backgroundColor: theme.colors.titleBar.activeBackground,
+    backgroundColor: theme.colors.titleBar.inactiveBackground,
     display: "grid",
     gridTemplateColumns: "auto max-content",
     height: TITLE_BAR_HEIGHT,
@@ -13,10 +13,13 @@ export const containerStyles = (theme: Theme) =>
     position: "fixed",
     right: 0,
     top: 0,
-    userSelect: "none",
     transition: "opacity 0.2s ease-in-out",
+    userSelect: "none",
     "&[data-is-hovered=true]": {
       opacity: 1,
+    },
+    "&[data-is-focused=true]": {
+      backgroundColor: theme.colors.titleBar.activeBackground,
     },
   });
 
@@ -31,7 +34,7 @@ export const windowControlsContainerStyles = (theme: Theme) =>
       appearance: "none",
       backgroundColor: "transparent",
       border: "none",
-      color: theme.colors.titleBar.activeForeground,
+      color: theme.colors.titleBar.inactiveForeground,
       display: "inline-flex",
       fontSize: 16,
       height: TITLE_BAR_HEIGHT,
@@ -46,12 +49,11 @@ export const windowControlsContainerStyles = (theme: Theme) =>
         background: theme.colors.titleBar.pressedBackground,
       },
 
+      "[data-is-focused=true] &": {
+        color: theme.colors.titleBar.activeForeground,
+      },
+
       "&[data-close-button]": {
-        svg: {
-          path: {
-            strokeWidth: 5,
-          },
-        },
         ":hover": {
           background: theme.colors.titleBar.hoverCloseBackground,
           color: theme.colors.titleBar.hoverCloseForeground,

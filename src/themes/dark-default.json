@@ -14,7 +14,9 @@
       "hoverCloseBackground": "rgb(232, 17, 35)",
       "hoverCloseForeground": "rgb(255, 255, 255)",
       "pressedBackground": "rgb(80, 80, 80)",
-      "pressedCloseBackground": "rgb(196, 43, 28)"
+      "pressedCloseBackground": "rgb(196, 43, 28)",
+      "inactiveBackground": "rgb(44, 44, 44)",
+      "inactiveForeground": "rgb(140, 140, 140)"
     }
   }
 }

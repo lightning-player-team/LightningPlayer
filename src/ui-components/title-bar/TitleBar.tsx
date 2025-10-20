@@ -34,6 +34,7 @@ export const TitleBar: FC = () => {
   // state machine and make use of the order of the events mentioned above.
   const [isHovered, setIsHovered] = useState<HoverState>(HoverState.None);
   const [isMaximized, setIsMaximized] = useState<boolean>(false);
+  const [isFocused, setIsFocused] = useState<boolean>(true);
   const [isPinned, setIsPinned] = useState<boolean>(false);
   const maximizeButtonRef = useRef<HTMLButtonElement>(null);
 
@@ -51,6 +52,28 @@ export const TitleBar: FC = () => {
     );
     return () => {
       promiseUnlisten.then((unlistenFn) => unlistenFn());
+    };
+  }, [appWindow]);
+
+  useEffect(() => {
+    const handleFocus = async () => {
+      const newIsFocused = await appWindow.isFocused();
+      setIsFocused(newIsFocused);
+    };
+
+    handleFocus();
+
+    const promiseFocusUnlisten = appWindow.listen(
+      TauriEvent.WINDOW_FOCUS,
+      handleFocus
+    );
+    const promiseBlurUnlisten = appWindow.listen(
+      TauriEvent.WINDOW_BLUR,
+      handleFocus
+    );
+    return () => {
+      promiseFocusUnlisten.then((unlistenFn) => unlistenFn());
+      promiseBlurUnlisten.then((unlistenFn) => unlistenFn());
     };
   }, [appWindow]);
 
@@ -94,6 +117,7 @@ export const TitleBar: FC = () => {
     <div
       css={[containerStyles, isPinned && pinnedContainerStyles]}
       data-is-hovered={isHovered !== HoverState.None}
+      data-is-focused={isFocused}
       onMouseDown={handleOnTitleBarMouseDown}
       onMouseEnter={handleOnTitleBarMouseEnter}
       onMouseLeave={handleOnTitleBarMouseLeave}
