@@ -1,5 +1,6 @@
 import { TauriEvent } from "@tauri-apps/api/event";
 import { getCurrentWindow } from "@tauri-apps/api/window";
+import { useAtom } from "jotai";
 import { FC, useEffect, useRef, useState } from "react";
 import { CloseIcon } from "../../assets/svgs/CloseIcon";
 import { MaximizeIcon } from "../../assets/svgs/MaximizeIcon";
@@ -7,6 +8,7 @@ import { MinimizeIcon } from "../../assets/svgs/MinimizeIcon";
 import PinIcon from "../../assets/svgs/PinIcon";
 import RestoreIcon from "../../assets/svgs/RestoreIcon";
 import UnpinIcon from "../../assets/svgs/UnpinIcon";
+import { titleBarPinnedState } from "../../shared/settings/titleBarPinnedState";
 import {
   containerStyles,
   pinnedContainerStyles,
@@ -35,7 +37,7 @@ export const TitleBar: FC = () => {
   const [isHovered, setIsHovered] = useState<HoverState>(HoverState.None);
   const [isMaximized, setIsMaximized] = useState<boolean>(false);
   const [isFocused, setIsFocused] = useState<boolean>(true);
-  const [isPinned, setIsPinned] = useState<boolean>(false);
+  const [isPinned, setIsPinned] = useAtom(titleBarPinnedState);
   const maximizeButtonRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {

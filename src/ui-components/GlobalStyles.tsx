@@ -4,8 +4,9 @@ export const GlobalStyles = () => {
   const theme = useTheme();
   const globalStyles = css({
     body: {
-      fontFamily: '"Roboto","Arial",sans-serif',
       color: theme.colors.text.default,
+      fontFamily: '"Roboto","Arial",sans-serif',
+      margin: 0,
       a: {
         color: theme.colors.text.link,
       },
