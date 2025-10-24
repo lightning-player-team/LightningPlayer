@@ -1,6 +1,6 @@
 import { useTheme } from "@emotion/react";
-import { backgroundImageStyles } from "./BackgroundImage.styles";
 import { FC } from "react";
+import { backgroundImageStyles } from "./BackgroundImage.styles";
 
 export const BackgroundImage: FC = () => {
   const theme = useTheme();
@@ -8,7 +8,7 @@ export const BackgroundImage: FC = () => {
     <div
       css={[
         backgroundImageStyles,
-        { backgroundColor: theme.colors.home.background },
+        { backgroundColor: theme.colors.root.background },
       ]}
     />
   );

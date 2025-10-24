@@ -1,17 +1,21 @@
-import { useAtomValue } from "jotai";
 import { FC } from "react";
-import { Link } from "react-router";
-import { titleBarPinnedState } from "../shared/settings/titleBarPinnedState";
-import { titleBarPlaceholderStyles } from "./Home.styles";
-import { ROUTES } from "./routes";
+import { Button } from "../ui-components/button/Button";
+import { FullscreenContainer } from "../ui-components/fullscreen-container/FullscreenContainer";
+import {
+  contentContainerStyles,
+  dragAndDropTextStyles,
+  openFileButtonStyles,
+  orTextStyles,
+} from "./Home.styles";
 
 export const Home: FC = () => {
-  const isTitleBarPinned = useAtomValue(titleBarPinnedState);
   return (
-    <>
-      {isTitleBarPinned && <div css={titleBarPlaceholderStyles} />}
-      <p>hello world</p>
-      <Link to={ROUTES.player}>Go to player</Link>
-    </>
+    <FullscreenContainer>
+      <div css={contentContainerStyles}>
+        <Button css={openFileButtonStyles}>Open File</Button>
+        <p css={orTextStyles}>or</p>
+        <p css={dragAndDropTextStyles}>Drag and drop a file here</p>
+      </div>
+    </FullscreenContainer>
   );
 };

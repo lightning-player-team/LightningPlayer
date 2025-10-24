@@ -1,7 +1,23 @@
 import { css } from "@emotion/react";
-import { TITLE_BAR_HEIGHT } from "../ui-components/title-bar/TitleBar.styles";
 
-export const titleBarPlaceholderStyles = css({
-  height: TITLE_BAR_HEIGHT,
-  width: "100%",
+export const contentContainerStyles = css({
+  display: "flex",
+  flexDirection: "column",
+  alignItems: "center",
+  justifyContent: "center",
+  rowGap: "0.75em",
+});
+
+export const openFileButtonStyles = css({
+  fontSize: "1.5rem",
+  padding: "6px 16px",
+});
+
+export const orTextStyles = css({
+  margin: 0,
+});
+
+export const dragAndDropTextStyles = css({
+  marginTop: "6px",
+  marginBottom: "6px",
 });

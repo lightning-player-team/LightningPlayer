@@ -1,6 +1,6 @@
 {
   "colors": {
-    "home": {
+    "root": {
       "background": "rgb(0, 0, 0)"
     },
     "text": {
@@ -17,6 +17,13 @@
       "pressedCloseBackground": "rgb(196, 43, 28)",
       "inactiveBackground": "rgb(44, 44, 44)",
       "inactiveForeground": "rgb(140, 140, 140)"
+    },
+    "button": {
+      "text": {
+        "background": "rgba(0, 0, 0, 0)",
+        "color": "rgb(144, 202, 249)",
+        "hoverBackground": "rgba(144, 202, 249, 0.1)"
+      }
     }
   }
 }

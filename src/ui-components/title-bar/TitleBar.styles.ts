@@ -1,6 +1,5 @@
 import { css, Theme } from "@emotion/react";
-
-export const TITLE_BAR_HEIGHT = 30;
+import { TITLE_BAR_HEIGHT } from "./TitleBar.tc";
 
 export const containerStyles = (theme: Theme) =>
   css({
@@ -42,10 +41,10 @@ export const windowControlsContainerStyles = (theme: Theme) =>
       margin: 0,
       padding: 0,
       width: 48,
-      ":hover": {
+      "&:hover": {
         background: theme.colors.titleBar.hoverBackground,
       },
-      ":active": {
+      "&:active": {
         background: theme.colors.titleBar.pressedBackground,
       },
 
@@ -54,11 +53,11 @@ export const windowControlsContainerStyles = (theme: Theme) =>
       },
 
       "&[data-close-button]": {
-        ":hover": {
+        "&:hover": {
           background: theme.colors.titleBar.hoverCloseBackground,
           color: theme.colors.titleBar.hoverCloseForeground,
         },
-        ":active": {
+        "&:active": {
           background: theme.colors.titleBar.pressedCloseBackground,
         },
       },

@@ -3,7 +3,7 @@ import "@emotion/react";
 declare module "@emotion/react" {
   export interface Theme {
     colors: {
-      home: {
+      root: {
         background: string;
       };
       text: {
@@ -20,6 +20,13 @@ declare module "@emotion/react" {
         pressedCloseBackground: string;
         inactiveBackground: string;
         inactiveForeground: string;
+      };
+      button: {
+        text: {
+          background: string;
+          color: string;
+          hoverBackground: string;
+        };
       };
     };
   }
