@@ -3,7 +3,7 @@ import { textButtonStyles } from "./Button.styles";
 import { ButtonVariant, IButtonProps } from "./Button.tc";
 
 export const Button = forwardRef<HTMLButtonElement, IButtonProps>(
-  ({ variant = ButtonVariant.TEXT, ...props }, ref) => {
+  ({ variant = ButtonVariant.Text, ...props }, ref) => {
     return (
       <button
         css={textButtonStyles}

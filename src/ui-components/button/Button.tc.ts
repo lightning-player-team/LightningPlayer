@@ -1,5 +1,5 @@
 export enum ButtonVariant {
-  TEXT,
+  Text,
 }
 
 export interface IButtonProps

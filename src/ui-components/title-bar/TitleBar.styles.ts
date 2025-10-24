@@ -1,4 +1,5 @@
 import { css, Theme } from "@emotion/react";
+import { ZIndex } from "../../shared/styles/zIndex";
 import { TITLE_BAR_HEIGHT } from "./TitleBar.tc";
 
 export const containerStyles = (theme: Theme) =>
@@ -14,6 +15,7 @@ export const containerStyles = (theme: Theme) =>
     top: 0,
     transition: "opacity 0.2s ease-in-out",
     userSelect: "none",
+    zIndex: ZIndex.TITLE_BAR,
     "&[data-is-hovered=true]": {
       opacity: 1,
     },

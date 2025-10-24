@@ -8,7 +8,7 @@ import { MinimizeIcon } from "../../assets/svgs/MinimizeIcon";
 import PinIcon from "../../assets/svgs/PinIcon";
 import RestoreIcon from "../../assets/svgs/RestoreIcon";
 import UnpinIcon from "../../assets/svgs/UnpinIcon";
-import { titleBarPinnedState } from "../../shared/settings/titleBarPinnedState";
+import { titleBarPinnedState } from "../../shared/atoms/titleBarPinnedState";
 import {
   containerStyles,
   pinnedContainerStyles,
@@ -65,29 +65,26 @@ export const TitleBar: FC = () => {
 
     handleFocus();
 
-    const promiseFocusUnlisten = appWindow.listen(
+    const unlistenFocus = appWindow.listen(
       TauriEvent.WINDOW_FOCUS,
       handleFocus
     );
-    const promiseBlurUnlisten = appWindow.listen(
-      TauriEvent.WINDOW_BLUR,
-      handleFocus
-    );
+    const unlistenBlur = appWindow.listen(TauriEvent.WINDOW_BLUR, handleFocus);
     return () => {
-      promiseFocusUnlisten.then((unlistenFn) => unlistenFn());
-      promiseBlurUnlisten.then((unlistenFn) => unlistenFn());
+      unlistenFocus.then((unlistenFn) => unlistenFn());
+      unlistenBlur.then((unlistenFn) => unlistenFn());
     };
   }, [appWindow]);
 
-  const handleOnTitleBarMouseDown = () => {
+  const handleOnMouseDownTitleBar = () => {
     // console.log("mouse down");
     setIsHovered(HoverState.HoveredClicked);
   };
-  const handleOnTitleBarMouseEnter = () => {
+  const handleOnMouseEnterTitleBar = () => {
     // console.log("mouse enter");
     setIsHovered(HoverState.Hovered);
   };
-  const handleOnTitleBarMouseLeave = () => {
+  const handleOnMouseLeaveTitleBar = () => {
     if (isHovered === HoverState.HoveredClicked) {
       // console.log("mouse leave - from clicked ");
       setIsHovered(HoverState.Hovered);
@@ -96,9 +93,11 @@ export const TitleBar: FC = () => {
       setIsHovered(HoverState.None);
     }
   };
-  const handleOnMouseDownChildren = (
+  const handleOnMouseDownButton = (
     event: React.MouseEvent<HTMLButtonElement>
   ) => {
+    // Prevent propagating mouseDown to title bar and therefore
+    // updating the hover state.
     event.stopPropagation();
   };
 
@@ -120,16 +119,16 @@ export const TitleBar: FC = () => {
       css={[containerStyles, isPinned && pinnedContainerStyles]}
       data-is-hovered={isHovered !== HoverState.None}
       data-is-focused={isFocused}
-      onMouseDown={handleOnTitleBarMouseDown}
-      onMouseEnter={handleOnTitleBarMouseEnter}
-      onMouseLeave={handleOnTitleBarMouseLeave}
+      onMouseDown={handleOnMouseDownTitleBar}
+      onMouseEnter={handleOnMouseEnterTitleBar}
+      onMouseLeave={handleOnMouseLeaveTitleBar}
     >
       <div data-tauri-drag-region />
       <div css={windowControlsContainerStyles}>
         <button
           id="titlebar-pin"
           onClick={handleOnPinClick}
-          onMouseDown={handleOnMouseDownChildren}
+          onMouseDown={handleOnMouseDownButton}
           title="pin"
         >
           {isPinned ? <UnpinIcon /> : <PinIcon />}
@@ -137,7 +136,7 @@ export const TitleBar: FC = () => {
         <button
           id="titlebar-minimize"
           onClick={handleOnMinimizeClick}
-          onMouseDown={handleOnMouseDownChildren}
+          onMouseDown={handleOnMouseDownButton}
           title="minimize"
         >
           <MinimizeIcon />
@@ -145,7 +144,7 @@ export const TitleBar: FC = () => {
         <button
           id="titlebar-maximize"
           onClick={handleOnMaximizeClick}
-          onMouseDown={handleOnMouseDownChildren}
+          onMouseDown={handleOnMouseDownButton}
           ref={maximizeButtonRef}
           title={isMaximized ? "restore" : "maximize"}
         >
@@ -155,7 +154,7 @@ export const TitleBar: FC = () => {
           id="titlebar-close"
           data-close-button
           onClick={handleOnCloseClick}
-          onMouseDown={handleOnMouseDownChildren}
+          onMouseDown={handleOnMouseDownButton}
           title="close"
         >
           <CloseIcon />

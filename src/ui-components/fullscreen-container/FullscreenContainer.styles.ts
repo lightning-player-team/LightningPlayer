@@ -5,11 +5,13 @@ export const containerStyles = css({
   alignItems: "center",
   display: "flex",
   flexDirection: "column",
-  height: `calc(100vh - ${TITLE_BAR_HEIGHT}px)`,
+  height: "100vh",
   justifyContent: "center",
+  position: "relative",
   width: "100vw",
 
   '&[data-is-title-bar-pinned="true"]': {
+    height: `calc(100vh - ${TITLE_BAR_HEIGHT}px)`,
     marginTop: TITLE_BAR_HEIGHT,
   },
 });

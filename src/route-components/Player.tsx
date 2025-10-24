@@ -24,7 +24,7 @@ export const Player: FC = () => {
       ],
     });
     if (file) {
-      setFilePath(convertFileSrc(file as string));
+      setFilePath(convertFileSrc(file));
     }
   }, []);
 
