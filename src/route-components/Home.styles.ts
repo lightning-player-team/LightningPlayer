@@ -1,16 +1,5 @@
 import { css } from "@emotion/react";
 
-export const dragAndDropOverlayStyles = css({
-  display: "flex",
-  flexDirection: "column",
-  alignItems: "center",
-  justifyContent: "center",
-  position: "absolute",
-  width: "100%",
-  height: "100%",
-  background: "rgba(0, 0, 0, 0.9)",
-});
-
 export const contentContainerStyles = css({
   alignItems: "center",
   display: "flex",
@@ -23,10 +12,6 @@ export const buttonsContainerStyles = css({
   columnGap: "8px",
   display: "flex",
   flexDirection: "row",
-});
-
-export const fileNotSupportedOverlayStyles = css({
-  cursor: "not-allowed",
 });
 
 export const buttonStyles = css({

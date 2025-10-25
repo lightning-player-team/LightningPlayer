@@ -1,8 +1,8 @@
 import { css, Theme } from "@emotion/react";
-import { ZIndex } from "../../shared/styles/zIndex";
+import { ZIndex } from "../../../shared/styles/zIndex";
 import { TITLE_BAR_HEIGHT } from "./TitleBar.tc";
 
-export const containerStyles = (theme: Theme) =>
+export const titleBarContainerStyles = (theme: Theme) =>
   css({
     backgroundColor: theme.colors.titleBar.inactiveBackground,
     display: "grid",

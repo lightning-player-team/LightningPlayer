@@ -47,7 +47,10 @@ export default defineConfig({
   plugins: [
     react({
       babel: {
-        plugins: [["babel-plugin-react-compiler", ReactCompilerConfig]],
+        plugins: [
+          "@emotion",
+          ["babel-plugin-react-compiler", ReactCompilerConfig],
+        ],
       },
     }),
     eslintPlugin({

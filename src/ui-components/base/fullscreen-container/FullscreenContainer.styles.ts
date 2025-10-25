@@ -1,7 +1,7 @@
 import { css } from "@emotion/react";
 import { TITLE_BAR_HEIGHT } from "../title-bar/TitleBar.tc";
 
-export const containerStyles = css({
+export const fullscreenContainerStyles = css({
   alignItems: "center",
   display: "flex",
   flexDirection: "column",

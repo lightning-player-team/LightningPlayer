@@ -6,13 +6,13 @@ use std::path::PathBuf;
 use std::sync::Arc;
 
 fn normalize_path_string(path: &PathBuf) -> String {
-    let s = path.to_string_lossy().to_string();
+    let result = path.to_string_lossy().to_string();
     if cfg!(windows) {
-        if let Some(rest) = s.strip_prefix("\\\\?\\") {
+        if let Some(rest) = result.strip_prefix("\\\\?\\") {
             return rest.to_string();
         }
     }
-    s
+    result
 }
 
 /// Recursively walk a directory with cycle detection and collect mp3/mp4 files.
@@ -52,7 +52,7 @@ pub fn process_paths(paths: Vec<String>) -> Result<Vec<String>, String> {
 
     let pathbufs: Vec<PathBuf> = paths.into_iter().map(PathBuf::from).collect();
 
-    println!("Message from Rust: {:?}", pathbufs[0]);
+    println!("Rust: {:?}", pathbufs);
 
     let results: Vec<String> = pathbufs
         .par_iter()
