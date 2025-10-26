@@ -5,8 +5,8 @@ import { RouterProvider } from "react-router/dom";
 import { Home } from "./route-components/Home";
 import { Player } from "./route-components/Player";
 import { Root } from "./route-components/root/Root";
-import { ROUTES } from "./route-components/routes";
 import { RootErrorBoundary } from "./route-components/root/RootErrorBoundary";
+import { ROUTES } from "./route-components/routes";
 
 const router = createBrowserRouter([
   {
