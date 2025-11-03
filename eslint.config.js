@@ -15,6 +15,9 @@ export default defineConfig([
       reactHooks.configs["recommended-latest"],
       reactRefresh.configs.vite,
     ],
+    rules: {
+      "object-shorthand": ["error"],
+    },
     languageOptions: {
       ecmaVersion: 2020,
       globals: globals.browser,

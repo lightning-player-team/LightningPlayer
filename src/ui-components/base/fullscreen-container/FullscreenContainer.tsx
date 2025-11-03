@@ -3,6 +3,9 @@ import { FC } from "react";
 import { titleBarPinnedState } from "../../../shared/atoms/titleBarPinnedState";
 import { fullscreenContainerStyles } from "./FullscreenContainer.styles";
 
+/**
+ * A fullscreen container that accounts for the pinned state of the TitleBar.
+ */
 export const FullscreenContainer: FC<{
   children: React.ReactNode;
   className?: string;

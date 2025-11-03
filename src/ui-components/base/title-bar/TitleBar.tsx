@@ -129,7 +129,7 @@ export const TitleBar: FC = () => {
           id="titlebar-pin"
           onClick={handleOnPinClick}
           onMouseDown={handleOnMouseDownButton}
-          title="pin"
+          title={isPinned ? "unpin" : "pin"}
         >
           {isPinned ? <UnpinIcon /> : <PinIcon />}
         </button>

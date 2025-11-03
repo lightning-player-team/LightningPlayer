@@ -1,6 +1,6 @@
-import { invoke } from "@tauri-apps/api/core";
 import { open } from "@tauri-apps/plugin-dialog";
 import { FC } from "react";
+import { useNavigate } from "react-router";
 import { Button } from "../ui-components/base/button/Button";
 import { FullscreenContainer } from "../ui-components/base/fullscreen-container/FullscreenContainer";
 import {
@@ -9,8 +9,10 @@ import {
   dragAndDropTextStyles,
   orTextStyles,
 } from "./Home.styles";
+import { ROUTES } from "./routes";
 
 export const Home: FC = () => {
+  const navigate = useNavigate();
   const handleOnClickOpenFile = async () => {
     const paths = await open({
       directory: false,
@@ -21,17 +23,11 @@ export const Home: FC = () => {
         { name: "Supported video files", extensions: ["mp4"] },
       ],
     });
-    if (paths) {
+    if (paths && paths.length) {
       console.log("Selected file:", paths);
-      try {
-        const res = await invoke("process_paths", {
-          paths: paths,
-        });
-        console.log("Processed files", res);
-      } catch (error) {
-        // Unexpected error
-        console.log(error);
-      }
+      navigate(ROUTES.player, { state: { files: paths } });
+    } else {
+      console.error("No files selected.");
     }
   };
 
@@ -41,15 +37,8 @@ export const Home: FC = () => {
     });
     if (path) {
       console.log("Selected folder:", path);
-      try {
-        const res = await invoke("process_paths", {
-          paths: [path],
-        });
-        console.log("Processed files", res);
-      } catch (error) {
-        // Unexpected error
-        console.log(error);
-      }
+    } else {
+      console.error("No folder selected.");
     }
   };
 
