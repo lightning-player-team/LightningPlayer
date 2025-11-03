@@ -1,6 +1,6 @@
 import { css, Theme } from "@emotion/react";
 import { ZIndex } from "../../../shared/styles/zIndex";
-import { TITLE_BAR_HEIGHT } from "./TitleBar.tc";
+import { TITLE_BAR_HEIGHT } from "./TitleBar";
 
 export const titleBarContainerStyles = (theme: Theme) =>
   css({
