@@ -1,7 +1,7 @@
 export enum Theme {
-    DarkDefault = "DarkDefault",
+  DarkDefault = "DarkDefault",
 }
 
 export interface IStory {
-    theme: Theme
+  theme: Theme;
 }
