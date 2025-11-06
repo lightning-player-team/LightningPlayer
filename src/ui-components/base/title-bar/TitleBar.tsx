@@ -40,6 +40,7 @@ export const TitleBar: FC = () => {
   const [isPinned, setIsPinned] = useAtom(titleBarPinnedState);
   const maximizeButtonRef = useRef<HTMLButtonElement>(null);
 
+  // Update isMaximized when Window is resized.
   useEffect(() => {
     const handleResize = async () => {
       const newIsMaximized = await appWindow.isMaximized();
@@ -57,6 +58,7 @@ export const TitleBar: FC = () => {
     };
   }, [appWindow]);
 
+  // Update isFocused when Window is focused and blurred.
   useEffect(() => {
     const handleFocus = async () => {
       const newIsFocused = await appWindow.isFocused();
@@ -76,21 +78,28 @@ export const TitleBar: FC = () => {
     };
   }, [appWindow]);
 
+  // Event handlers to track the hovered state.
   const handleOnMouseDownTitleBar = () => {
-    // console.log("mouse down");
-    setIsHovered(HoverState.HoveredClicked);
+    if (!isPinned) {
+      // console.log("mouse down");
+      setIsHovered(HoverState.HoveredClicked);
+    }
   };
   const handleOnMouseEnterTitleBar = () => {
-    // console.log("mouse enter");
-    setIsHovered(HoverState.Hovered);
+    if (!isPinned) {
+      // console.log("mouse enter");
+      setIsHovered(HoverState.Hovered);
+    }
   };
   const handleOnMouseLeaveTitleBar = () => {
-    if (isHovered === HoverState.HoveredClicked) {
-      // console.log("mouse leave - from clicked ");
-      setIsHovered(HoverState.Hovered);
-    } else {
-      // console.log("mouse leave");
-      setIsHovered(HoverState.None);
+    if (!isPinned) {
+      if (isHovered === HoverState.HoveredClicked) {
+        // console.log("mouse leave - from clicked ");
+        setIsHovered(HoverState.Hovered);
+      } else {
+        // console.log("mouse leave");
+        setIsHovered(HoverState.None);
+      }
     }
   };
   const handleOnMouseDownButton = (
@@ -101,6 +110,7 @@ export const TitleBar: FC = () => {
     event.stopPropagation();
   };
 
+  // Button event handlers.
   const handleOnPinClick = () => {
     setIsPinned(!isPinned);
   };
