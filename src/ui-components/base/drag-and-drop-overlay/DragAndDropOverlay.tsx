@@ -4,9 +4,18 @@ import { getCurrentWindow } from "@tauri-apps/api/window";
 import { DragEventHandler, FC, useEffect, useRef, useState } from "react";
 import { TauriDragEnterEventPayload } from "../../../shared/types/TauriEvent";
 import { dragAndDropOverlayContainerStyles } from "./DragAndDropOverlay.styles";
-import { DragAndDropResult, DragAndDropState } from "./DragAndDropOverlay.tc";
+import {
+  DragAndDropResult,
+  DragAndDropState,
+} from "./DragAndDropOverlay.types";
 
-export const DragAndDropOverlay: FC = () => {
+export interface IDragAndDropOverlayProps {
+  // This will only be true in Storybook.
+  testInvokeFail?: boolean;
+}
+export const DragAndDropOverlay: FC<IDragAndDropOverlayProps> = ({
+  testInvokeFail,
+}) => {
   const [dragAndDropState, setDragAndDropState] = useState<DragAndDropResult>(
     DragAndDropState.None
   );
@@ -23,6 +32,9 @@ export const DragAndDropOverlay: FC = () => {
     }) => {
       setDragAndDropState(DragAndDropState.Processing);
       try {
+        if (testInvokeFail) {
+          throw "No valid files";
+        }
         const paths = await invoke("process_paths", {
           paths: payload.paths,
         });
@@ -59,7 +71,7 @@ export const DragAndDropOverlay: FC = () => {
       unlistenDragLeave.then((unlistenFn) => unlistenFn());
       unlistenDragDrop.then((unlistenFn) => unlistenFn());
     };
-  }, [appWindow]);
+  }, [appWindow, testInvokeFail]);
 
   return (
     <div

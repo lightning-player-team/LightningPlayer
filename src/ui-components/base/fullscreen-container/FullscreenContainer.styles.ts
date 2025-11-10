@@ -1,5 +1,5 @@
 import { css } from "@emotion/react";
-import { TITLE_BAR_HEIGHT } from "../title-bar/TitleBar.tc";
+import { TITLE_BAR_HEIGHT } from "../title-bar/TitleBar.types";
 
 export const fullscreenContainerStyles = css({
   alignItems: "center",
