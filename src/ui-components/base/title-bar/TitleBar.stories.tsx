@@ -1,20 +1,20 @@
-import type { Meta, StoryObj } from "@storybook/react-vite";
+import { Meta, StoryObj } from "@storybook/react-vite";
 import { IStory, Theme } from "../../../shared/storybook/types";
 import { renderWithThemeAndGlobalStyles } from "../../../shared/storybook/utils";
-import { BackgroundImage } from "./BackgroundImage";
+import { TitleBar } from "./TitleBar";
 
 const meta = {
-  title: "base/BackgroundImage",
-  component: BackgroundImage,
+  title: "base/TitleBar",
+  component: TitleBar,
   render: ({ theme }) => {
-    return renderWithThemeAndGlobalStyles(theme, <BackgroundImage />);
+    return renderWithThemeAndGlobalStyles(theme, <TitleBar />);
   },
 } satisfies Meta<IStory>;
 
 export default meta;
-type BackgroundImageStory = StoryObj<typeof meta>;
+type TitleBarStory = StoryObj<typeof meta>;
 
-export const Default: BackgroundImageStory = {
+export const Default: TitleBarStory = {
   args: {
     theme: Theme.DarkDefault,
   },
