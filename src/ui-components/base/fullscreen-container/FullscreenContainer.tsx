@@ -1,5 +1,5 @@
 import { useAtomValue } from "jotai";
-import { FC } from "react";
+import { FC, ReactNode } from "react";
 import { titleBarPinnedState } from "../../../shared/atoms/titleBarPinnedState";
 import { fullscreenContainerStyles } from "./FullscreenContainer.styles";
 
@@ -7,7 +7,7 @@ import { fullscreenContainerStyles } from "./FullscreenContainer.styles";
  * A fullscreen container that accounts for the pinned state of the TitleBar.
  */
 export const FullscreenContainer: FC<{
-  children: React.ReactNode;
+  children: ReactNode;
   className?: string;
 }> = ({ children, className }) => {
   const isTitleBarPinned = useAtomValue(titleBarPinnedState);

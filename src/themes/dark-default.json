@@ -24,6 +24,14 @@
         "color": "rgb(144, 202, 249)",
         "hoverBackground": "rgba(144, 202, 249, 0.1)"
       }
+    },
+    "playerControls": {
+      "button": {
+        "color": "rgb(238, 238, 238)"
+      }
+    },
+    "window": {
+      "background": "rgba(52, 52, 52, 0.98)"
     }
   }
 }

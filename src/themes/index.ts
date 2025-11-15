@@ -1,1 +1,6 @@
-export { default as themeDarkDefault } from "./dark-default.json";
+import { Theme } from "@emotion/react";
+import { default as themeDarkDefaultJSON } from "./dark-default.json";
+
+const themeDarkDefault: Theme = themeDarkDefaultJSON;
+
+export { themeDarkDefault };

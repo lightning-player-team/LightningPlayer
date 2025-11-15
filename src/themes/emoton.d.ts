@@ -28,6 +28,14 @@ declare module "@emotion/react" {
           hoverBackground: string;
         };
       };
+      playerControls: {
+        button: {
+          color: string;
+        };
+      };
+      window: {
+        background: string;
+      };
     };
   }
 }
