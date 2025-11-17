@@ -1,7 +1,23 @@
 {
   "colors": {
+    "button": {
+      "text": {
+        "background": "rgba(0, 0, 0, 0)",
+        "color": "rgb(144, 202, 249)",
+        "hoverBackground": "rgba(144, 202, 249, 0.1)"
+      }
+    },
+    "playerControls": {
+      "button": {
+        "color": "rgb(238, 238, 238)"
+      }
+    },
     "root": {
       "background": "rgb(0, 0, 0)"
+    },
+    "scrollbar": {
+      "thumb": "rgba(0, 0, 0, 0.9)",
+      "track": "transparent"
     },
     "text": {
       "default": "rgb(241, 241, 241)",
@@ -17,18 +33,6 @@
       "pressedCloseBackground": "rgb(196, 43, 28)",
       "inactiveBackground": "rgb(44, 44, 44)",
       "inactiveForeground": "rgb(140, 140, 140)"
-    },
-    "button": {
-      "text": {
-        "background": "rgba(0, 0, 0, 0)",
-        "color": "rgb(144, 202, 249)",
-        "hoverBackground": "rgba(144, 202, 249, 0.1)"
-      }
-    },
-    "playerControls": {
-      "button": {
-        "color": "rgb(238, 238, 238)"
-      }
     },
     "window": {
       "background": "rgba(52, 52, 52, 0.98)"

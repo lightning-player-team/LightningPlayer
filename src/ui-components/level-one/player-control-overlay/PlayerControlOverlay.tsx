@@ -1,6 +1,6 @@
-import { Command } from "@tauri-apps/plugin-shell";
-import { FC, useEffect, useState } from "react";
+import { FC, useState } from "react";
 import { InfoIcon } from "../../../assets/svgs/InfoIcon";
+import { IMediaInfo } from "../../../shared/types/mediaInfo";
 import { ResizableWindow } from "../../base/resizable-window/ResizableWindow";
 import {
   bottomControlsContainerStyles,
@@ -11,33 +11,13 @@ import {
 } from "./PlayerControlOverlay.styles";
 
 export interface IPlayerControlOverlayProps {
-  filePath?: string;
+  mediaInfo?: IMediaInfo;
 }
 
 export const PlayerControlOverlay: FC<IPlayerControlOverlayProps> = ({
-  filePath,
+  mediaInfo,
 }) => {
   const [isVideoInfoWindowOpen, setIsVideoInfoWindowOpen] = useState(false);
-  const [videoInfo, setVideoInfo] = useState<string | undefined>(undefined);
-
-  useEffect(() => {
-    let unmounted = false;
-    const fetchVideoInfo = async (filePath: string) => {
-      const result = await Command.sidecar("binaries/ffprobe", [
-        filePath,
-        ..."-v quiet -print_format json -show_streams -show_format".split(" "),
-      ]).execute();
-      if (!unmounted) {
-        setVideoInfo(result.stdout);
-      }
-    };
-    if (filePath) {
-      fetchVideoInfo(filePath);
-    }
-    return () => {
-      unmounted = true;
-    };
-  }, [filePath]);
 
   const handleOnClickInfoButton = () => {
     setIsVideoInfoWindowOpen(!isVideoInfoWindowOpen);
@@ -62,9 +42,11 @@ export const PlayerControlOverlay: FC<IPlayerControlOverlayProps> = ({
         <ResizableWindow
           css={infoWindowStyles}
           onClose={handleOnClickInfoWindowClose}
-          title={"Video Info"}
+          title={"Media Info"}
         >
-          <pre css={videoInfoPreStyles}>{videoInfo}</pre>
+          <pre css={videoInfoPreStyles}>
+            {JSON.stringify(mediaInfo, null, 2)}
+          </pre>
         </ResizableWindow>
       )}
     </div>

@@ -2,7 +2,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { EventCallback, TauriEvent } from "@tauri-apps/api/event";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { DragEventHandler, FC, useEffect, useRef, useState } from "react";
-import { TauriDragEnterEventPayload } from "../../../shared/types/TauriEvent";
+import { TauriDragEnterEventPayload } from "../../../shared/types/tauriEvent";
 import { dragAndDropOverlayContainerStyles } from "./DragAndDropOverlay.styles";
 import { DragAndDropResult, DragAndDropState } from "./DragAndDropOverlay.tc";
 

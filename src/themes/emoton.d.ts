@@ -3,8 +3,24 @@ import "@emotion/react";
 declare module "@emotion/react" {
   export interface Theme {
     colors: {
+      button: {
+        text: {
+          background: string;
+          color: string;
+          hoverBackground: string;
+        };
+      };
+      playerControls: {
+        button: {
+          color: string;
+        };
+      };
       root: {
         background: string;
+      };
+      scrollbar: {
+        thumb: string;
+        track: string;
       };
       text: {
         default: string;
@@ -20,18 +36,6 @@ declare module "@emotion/react" {
         pressedCloseBackground: string;
         inactiveBackground: string;
         inactiveForeground: string;
-      };
-      button: {
-        text: {
-          background: string;
-          color: string;
-          hoverBackground: string;
-        };
-      };
-      playerControls: {
-        button: {
-          color: string;
-        };
       };
       window: {
         background: string;

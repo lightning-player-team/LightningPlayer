@@ -4,9 +4,11 @@ This project is given this name because it was "lightning fast" to implement. Be
 
 # Machine Setup
 
+Install Git LFS: [GitHub Tutorial](https://docs.github.com/en/repositories/working-with-files/managing-large-files/installing-git-large-file-storage).
+
 Follow the [Tauri documentation](https://v2.tauri.app/start/prerequisites/) to install all dependencies.
 
-Install Node.js as well since we're using React.
+Install Node.js since we're using React. The current version in use is `v22.20.0`.
 
 Install pnpm following their [official docs](https://pnpm.io/installation).
 

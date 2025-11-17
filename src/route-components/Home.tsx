@@ -1,6 +1,10 @@
 import { open } from "@tauri-apps/plugin-dialog";
 import { FC } from "react";
 import { useNavigate } from "react-router";
+import {
+  AudioFileExtension,
+  VideoFileExtension,
+} from "../shared/types/fileExtensions";
 import { Button } from "../ui-components/base/button/Button";
 import { FullscreenContainer } from "../ui-components/base/fullscreen-container/FullscreenContainer";
 import {
@@ -11,6 +15,13 @@ import {
 } from "./Home.styles";
 import { ROUTES } from "./routes";
 
+const supportedVideoExtensions = Object.values(VideoFileExtension);
+const supportedAudioExtensions = Object.values(AudioFileExtension);
+const allSupportedExtensions = [
+  ...supportedVideoExtensions,
+  ...supportedAudioExtensions,
+];
+
 export const Home: FC = () => {
   const navigate = useNavigate();
   const handleOnClickOpenFile = async () => {
@@ -18,9 +29,12 @@ export const Home: FC = () => {
       directory: false,
       multiple: true,
       filters: [
-        { name: "All supported files", extensions: ["mp3", "mp4"] },
-        { name: "Supported audio files", extensions: ["mp3"] },
-        { name: "Supported video files", extensions: ["mp4"] },
+        {
+          name: "All supported files",
+          extensions: allSupportedExtensions,
+        },
+        { name: "Supported audio files", extensions: supportedAudioExtensions },
+        { name: "Supported video files", extensions: supportedVideoExtensions },
       ],
     });
     if (paths && paths.length) {

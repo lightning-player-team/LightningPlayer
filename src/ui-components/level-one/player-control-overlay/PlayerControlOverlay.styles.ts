@@ -41,4 +41,5 @@ export const infoButtonStyles = (theme: Theme) =>
 
 export const videoInfoPreStyles = css({
   whiteSpace: "pre-wrap",
+  overflowWrap: "break-word",
 });
