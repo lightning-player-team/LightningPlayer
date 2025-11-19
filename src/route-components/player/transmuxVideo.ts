@@ -11,7 +11,9 @@ export const transmuxVideo = async (
     `Transmuxing video to ${outputExtension} container: ${inputPath} -> ${outputPath}`
   );
   const result = await Command.sidecar("binaries/ffmpeg", [
-    ...`-loglevel error -y -i ${inputPath} -c copy ${outputPath}`.split(" "),
+    ...`-loglevel error -y -i ${inputPath} -c copy -an ${outputPath}`.split(
+      " "
+    ),
   ]).execute();
   console.log("ffmpeg output:", result);
   if (result.code !== 0) {

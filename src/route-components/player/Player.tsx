@@ -7,8 +7,7 @@ import { VideoFileExtension } from "../../shared/types/fileExtensions";
 import { IMediaInfo } from "../../shared/types/mediaInfo";
 import { getFileExtension } from "../../shared/utils/getFileExtension";
 import { FullscreenContainer } from "../../ui-components/base/fullscreen-container/FullscreenContainer";
-import { PlayerControlOverlay } from "../../ui-components/level-one/player-control-overlay/PlayerControlOverlay";
-import { videoStyles } from "./Player.styles";
+import { NativePlayer } from "./NativePlayer";
 import { transmuxVideo } from "./transmuxVideo";
 
 export const Player: FC = () => {
@@ -16,6 +15,7 @@ export const Player: FC = () => {
   const files = state.files as string[];
   const [filePath, setFilePath] = useState<string>(files[0]);
   const [mediaInfo, setMediaInfo] = useState<IMediaInfo | undefined>(undefined);
+  const [canUseNativePlayer, setCanUseNativePlayer] = useState<boolean>(true);
 
   // Retrieving media info using ffprobe.
   useEffect(() => {
@@ -44,13 +44,19 @@ export const Player: FC = () => {
         const videoCodecName = firstVideoStream?.codec_name;
         const videoExtension = getFileExtension(filePath);
         console.log(
-          "Video codec:",
-          videoCodecName,
+          "Medatadata",
+          metadata,
+          "First video stream:",
+          firstVideoStream,
           ", extension:",
           videoExtension
         );
         switch (videoCodecName) {
-          case VideoCodec.H264: {
+          // If video stream codec is supported, always transmux into
+          // supported container format for consistency.
+          case VideoCodec.H264:
+          case VideoCodec.VP9:
+          case VideoCodec.AV1: {
             if (videoExtension !== VideoFileExtension.MP4) {
               try {
                 const outputFilePath = await transmuxVideo(
@@ -62,6 +68,25 @@ export const Player: FC = () => {
                 console.error(error);
               }
             }
+            return;
+          }
+          case VideoCodec.VP8: {
+            if (videoExtension !== VideoFileExtension.WEBM) {
+              try {
+                const outputFilePath = await transmuxVideo(
+                  filePath,
+                  VideoFileExtension.WEBM
+                );
+                setFilePath(outputFilePath);
+              } catch (error) {
+                console.error(error);
+              }
+            }
+            return;
+          }
+          default: {
+            // TODO
+            setCanUseNativePlayer(false);
           }
         }
       }
@@ -80,10 +105,9 @@ export const Player: FC = () => {
 
   return (
     <FullscreenContainer>
-      <video css={videoStyles}>
-        <source src={convertFileSrc(filePath)} type="video/mp4" />
-      </video>
-      <PlayerControlOverlay mediaInfo={mediaInfo} />
+      {canUseNativePlayer ? (
+        <NativePlayer mediaInfo={mediaInfo} src={convertFileSrc(filePath)} />
+      ) : null}
     </FullscreenContainer>
   );
 };
