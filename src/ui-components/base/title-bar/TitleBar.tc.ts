@@ -1,2 +1,4 @@
+import { isTauri } from "@tauri-apps/api/core";
+
 // In pixels
-export const TITLE_BAR_HEIGHT = 30;
+export const TITLE_BAR_HEIGHT = isTauri() ? 30 : 0;

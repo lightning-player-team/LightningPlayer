@@ -1,113 +1,184 @@
-import { convertFileSrc } from "@tauri-apps/api/core";
-import { Command } from "@tauri-apps/plugin-shell";
-import { FC, useEffect, useState } from "react";
+import { FC, useCallback, useEffect, useRef, useState } from "react";
 import { useLocation } from "react-router";
-import { VideoCodec } from "../../shared/types/codecs";
-import { VideoFileExtension } from "../../shared/types/fileExtensions";
-import { IMediaInfo } from "../../shared/types/mediaInfo";
-import { getFileExtension } from "../../shared/utils/getFileExtension";
+import { WebDemuxer } from "web-demuxer";
+import { useDimensions } from "../../shared/hooks/useDimensions";
+import { wait } from "../../shared/utils/wait";
+import { Button } from "../../ui-components/base/button/Button";
 import { FullscreenContainer } from "../../ui-components/base/fullscreen-container/FullscreenContainer";
-import { NativePlayer } from "./NativePlayer";
-import { transmuxVideo } from "./transmuxVideo";
+import { PlayerControlOverlay } from "../../ui-components/level-one/player-control-overlay/PlayerControlOverlay";
+import { getFPS } from "./getFPS";
+import { playerControlOverlayStyles } from "./Player.styles";
 
 export const Player: FC = () => {
   const { state } = useLocation();
+
+  const [loading, setLoading] = useState(true);
+  const [fps, setFps] = useState<number | undefined>(undefined);
+
+  const fullscreenContainerRef = useRef<HTMLDivElement>(null);
+  const screenDimensions = useDimensions(fullscreenContainerRef);
+
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  const demuxerRef = useRef<WebDemuxer>(
+    new WebDemuxer({
+      wasmFilePath: new URL(
+        "./dist/wasm-files/web-demuxer.wasm",
+        window.location.origin
+      ).href,
+    })
+  );
+  const decoderRef = useRef<VideoDecoder | null>(null);
+
   const files = state.files as string[];
-  const [filePath, setFilePath] = useState<string>(files[0]);
-  const [mediaInfo, setMediaInfo] = useState<IMediaInfo | undefined>(undefined);
-  const [canUseNativePlayer, setCanUseNativePlayer] = useState<boolean>(true);
+  console.log("files:", files);
 
-  // Retrieving media info using ffprobe.
+  // Initializing demuxer and setting fps.
+  // Should only run once per files change.
   useEffect(() => {
-    let unmounted = false;
-    const fetchVideo = async (filePath: string) => {
-      let metadata: IMediaInfo | undefined = undefined;
-      try {
-        const result = await Command.sidecar("binaries/ffprobe", [
-          filePath,
-          ..."-v quiet -print_format json -show_streams -show_format".split(
-            " "
-          ),
-        ]).execute();
-        metadata = JSON.parse(result.stdout);
-        console.log("ffprobe output:", metadata);
-      } catch (error) {
-        console.error("Error retrieving video metadata:", error);
+    const setUpDemuxer = async (): Promise<boolean> => {
+      const demuxer = demuxerRef.current;
+      if (!files || files.length === 0) {
+        console.error("Initialization failed: no files.");
+        return false;
       }
-      if (!metadata) {
-        throw new Error("Error retrieving video metadata: No ffprobe output");
-      }
-      const firstVideoStream = metadata.streams.find(
-        (stream) => stream.codec_type === "video"
-      );
-      if (firstVideoStream) {
-        const videoCodecName = firstVideoStream?.codec_name;
-        const videoExtension = getFileExtension(filePath);
-        console.log(
-          "Medatadata",
-          metadata,
-          "First video stream:",
-          firstVideoStream,
-          ", extension:",
-          videoExtension
-        );
-        switch (videoCodecName) {
-          // If video stream codec is supported, always transmux into
-          // supported container format for consistency.
-          case VideoCodec.H264:
-          case VideoCodec.VP9:
-          case VideoCodec.AV1: {
-            if (videoExtension !== VideoFileExtension.MP4) {
-              try {
-                const outputFilePath = await transmuxVideo(
-                  filePath,
-                  VideoFileExtension.MP4
-                );
-                setFilePath(outputFilePath);
-              } catch (error) {
-                console.error(error);
-              }
-            }
-            return;
-          }
-          case VideoCodec.VP8: {
-            if (videoExtension !== VideoFileExtension.WEBM) {
-              try {
-                const outputFilePath = await transmuxVideo(
-                  filePath,
-                  VideoFileExtension.WEBM
-                );
-                setFilePath(outputFilePath);
-              } catch (error) {
-                console.error(error);
-              }
-            }
-            return;
-          }
-          default: {
-            // TODO
-            setCanUseNativePlayer(false);
-          }
-        }
-      }
-      if (!unmounted) {
-        setMediaInfo(metadata);
-      }
+
+      await demuxer.load(files[0]);
+      const fps = await getFPS(demuxer);
+      setFps(fps);
+      return true;
     };
 
-    if (filePath) {
-      fetchVideo(filePath);
+    if (loading) {
+      setUpDemuxer().then((success) => {
+        if (success) {
+          setLoading(false);
+        }
+      });
     }
-    return () => {
-      unmounted = true;
-    };
-  }, [filePath]);
+  }, [files, loading]);
+
+  const setUpDecoder = useCallback(async () => {
+    const canvas = canvasRef.current;
+
+    if (!canvas) {
+      console.error("Error setting up decoder: no canvas.");
+      return false;
+    }
+
+    if (!screenDimensions) {
+      console.error("Error setting up decoder: no screen dimensions.");
+      return false;
+    }
+
+    const ctx = canvas.getContext("2d");
+
+    if (!ctx) {
+      console.error("Error setting up decoder: no 2D context.");
+      return false;
+    }
+
+    const demuxer = demuxerRef.current;
+    if (decoderRef.current && decoderRef.current.state !== "closed") {
+      console.log("Closing existing decoder.");
+      decoderRef.current.close();
+    }
+    const videoDecoderConfig = await demuxer.getDecoderConfig("video");
+    decoderRef.current = new VideoDecoder({
+      output: (frame) => {
+        const widthScale = screenDimensions.width / frame.displayWidth;
+        const heightScale = screenDimensions.height / frame.displayHeight;
+        const scale = Math.min(widthScale, heightScale);
+        const dw = frame.displayWidth * scale;
+        const dh = frame.displayHeight * scale;
+        let dx = 0;
+        let dy = 0;
+        if (widthScale < heightScale) {
+          dy = (screenDimensions.height - dh) / 2;
+        } else {
+          dx = (screenDimensions.width - dw) / 2;
+        }
+        ctx.drawImage(frame, dx, dy, dw, dh);
+        frame.close();
+      },
+      error: (error) => {
+        console.error("video decoder error:", error);
+      },
+    });
+    decoderRef.current.configure(videoDecoderConfig);
+    return true;
+  }, [screenDimensions]);
+
+  // Handling canvas resize: setUpDecoder is updated upon dimension changes.
+  useEffect(() => {
+    if (!loading) {
+      setUpDecoder().then((success) => {
+        if (success) {
+          const decoder = decoderRef.current;
+          demuxerRef.current
+            .seek("video", 0)
+            .then((firstVideoChunk) => {
+              decoder?.decode(firstVideoChunk);
+              decoder?.flush();
+            })
+            .catch((error) => {
+              console.error("Error rendering first frame:", error);
+            });
+        }
+      });
+    }
+  }, [loading, setUpDecoder]);
+
+  const handleOnClickPlay = async () => {
+    const demuxer = demuxerRef.current;
+    const decoder = decoderRef.current;
+
+    if (loading) {
+      console.error("Still loading.");
+      return;
+    }
+    if (!decoder) {
+      console.error("No decoder.");
+      return;
+    }
+    if (!fps) {
+      console.error("No fps.");
+      return;
+    }
+
+    const reader = demuxer.read("video").getReader();
+    reader
+      .read()
+      .then(async function processPacket({ done, value }): Promise<void> {
+        if (done) {
+          decoder.flush();
+          console.log("read finished");
+          return;
+        }
+
+        decoder.decode(value);
+
+        // play as frame rate
+        await wait(1000 / fps);
+
+        return reader.read().then(processPacket);
+      });
+  };
 
   return (
-    <FullscreenContainer>
-      {canUseNativePlayer ? (
-        <NativePlayer mediaInfo={mediaInfo} src={convertFileSrc(filePath)} />
-      ) : null}
+    <FullscreenContainer ref={fullscreenContainerRef}>
+      <div css={playerControlOverlayStyles}>
+        <Button onClick={handleOnClickPlay}>Play</Button>
+      </div>
+
+      <PlayerControlOverlay />
+
+      <canvas
+        id="example-play-canvas"
+        width={screenDimensions?.width}
+        height={screenDimensions?.height}
+        ref={canvasRef}
+      />
     </FullscreenContainer>
   );
 };

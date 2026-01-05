@@ -27,3 +27,7 @@ export const dragAndDropTextStyles = css({
   marginTop: "6px",
   marginBottom: "6px",
 });
+
+export const hiddenInputStyles = css({
+  display: "none",
+});

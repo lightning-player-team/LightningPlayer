@@ -1,4 +1,5 @@
 import { ThemeProvider } from "@emotion/react";
+import { isTauri } from "@tauri-apps/api/core";
 import { FC } from "react";
 import { Outlet } from "react-router";
 import { GlobalStyles } from "../../shared/styles/GlobalStyles";
@@ -13,8 +14,8 @@ export const Root: FC = () => {
       <ThemeProvider theme={themeDarkDefault}>
         <GlobalStyles />
         <BackgroundImage />
-        <TitleBar />
-        <DragAndDropOverlay />
+        {isTauri() && <TitleBar />}
+        {isTauri() && <DragAndDropOverlay />}
         <Outlet />
       </ThemeProvider>
     </main>

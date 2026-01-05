@@ -1,22 +1,14 @@
 import { FC, useState } from "react";
 import { InfoIcon } from "../../../assets/svgs/InfoIcon";
-import { IMediaInfo } from "../../../shared/types/mediaInfo";
 import { ResizableWindow } from "../../base/resizable-window/ResizableWindow";
 import {
   bottomControlsContainerStyles,
   infoButtonStyles,
   infoWindowStyles,
   playerControlOverlayContainerStyles,
-  videoInfoPreStyles,
 } from "./PlayerControlOverlay.styles";
 
-export interface IPlayerControlOverlayProps {
-  mediaInfo?: IMediaInfo;
-}
-
-export const PlayerControlOverlay: FC<IPlayerControlOverlayProps> = ({
-  mediaInfo,
-}) => {
+export const PlayerControlOverlay: FC = () => {
   const [isVideoInfoWindowOpen, setIsVideoInfoWindowOpen] = useState(false);
 
   const handleOnClickInfoButton = () => {
@@ -43,11 +35,7 @@ export const PlayerControlOverlay: FC<IPlayerControlOverlayProps> = ({
           css={infoWindowStyles}
           onClose={handleOnClickInfoWindowClose}
           title={"Media Info"}
-        >
-          <pre css={videoInfoPreStyles}>
-            {JSON.stringify(mediaInfo, null, 2)}
-          </pre>
-        </ResizableWindow>
+        ></ResizableWindow>
       )}
     </div>
   );

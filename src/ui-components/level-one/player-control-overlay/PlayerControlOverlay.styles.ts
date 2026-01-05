@@ -38,8 +38,3 @@ export const infoButtonStyles = (theme: Theme) =>
     padding: 0,
     fontSize: 24,
   });
-
-export const videoInfoPreStyles = css({
-  whiteSpace: "pre-wrap",
-  overflowWrap: "break-word",
-});
