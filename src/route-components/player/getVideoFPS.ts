@@ -1,7 +1,6 @@
-import { WebDemuxer } from "web-demuxer";
+import { WebMediaInfo } from "web-demuxer";
 
-export const getFPS = async (demuxer: WebDemuxer) => {
-  const mediaInfo = await demuxer.getMediaInfo();
+export const getVideoFPS = (mediaInfo: WebMediaInfo) => {
   const videoStream = mediaInfo.streams.find(
     (stream) => stream.codec_type_string === "video"
   );
@@ -22,7 +21,6 @@ export const getFPS = async (demuxer: WebDemuxer) => {
     }
   }
 
-  // console.log(`Media Info: ${JSON.stringify(mediaInfo, null, 2)}`);
   console.log(`Video frame rate: ${fps} fps`);
 
   return fps;

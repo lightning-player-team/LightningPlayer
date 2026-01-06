@@ -6,51 +6,57 @@ import { wait } from "../../shared/utils/wait";
 import { Button } from "../../ui-components/base/button/Button";
 import { FullscreenContainer } from "../../ui-components/base/fullscreen-container/FullscreenContainer";
 import { PlayerControlOverlay } from "../../ui-components/level-one/player-control-overlay/PlayerControlOverlay";
-import { getFPS } from "./getFPS";
+import { getVideoDuration } from "./getVideoDuration";
+import { getVideoFPS } from "./getVideoFPS";
 import { playerControlOverlayStyles } from "./Player.styles";
+
+const demuxer = new WebDemuxer({
+  wasmFilePath: new URL(
+    "./dist/wasm-files/web-demuxer.wasm",
+    window.location.origin
+  ).href,
+});
+
+const latestSeekId: number = 0;
 
 export const Player: FC = () => {
   const { state } = useLocation();
 
   const [loading, setLoading] = useState(true);
+  const [progress, setProgress] = useState(0); // In seconds
   const [fps, setFps] = useState<number | undefined>(undefined);
+  const [duration, setDuration] = useState<number | undefined>(undefined);
 
   const fullscreenContainerRef = useRef<HTMLDivElement>(null);
   const screenDimensions = useDimensions(fullscreenContainerRef);
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
-  const demuxerRef = useRef<WebDemuxer>(
-    new WebDemuxer({
-      wasmFilePath: new URL(
-        "./dist/wasm-files/web-demuxer.wasm",
-        window.location.origin
-      ).href,
-    })
-  );
   const decoderRef = useRef<VideoDecoder | null>(null);
 
   const files = state.files as string[];
   console.log("files:", files);
 
-  // Initializing demuxer and setting fps.
   // Should only run once per files change.
   useEffect(() => {
-    const setUpDemuxer = async (): Promise<boolean> => {
-      const demuxer = demuxerRef.current;
+    const loadFile = async (): Promise<boolean> => {
       if (!files || files.length === 0) {
         console.error("Initialization failed: no files.");
         return false;
       }
 
       await demuxer.load(files[0]);
-      const fps = await getFPS(demuxer);
+      const mediaInfo = await demuxer.getMediaInfo();
+      // console.log(`Media Info: ${JSON.stringify(mediaInfo, null, 2)}`);
+      const fps = getVideoFPS(mediaInfo);
       setFps(fps);
+      const duration = getVideoDuration(mediaInfo);
+      setDuration(duration);
       return true;
     };
 
     if (loading) {
-      setUpDemuxer().then((success) => {
+      loadFile().then((success) => {
         if (success) {
           setLoading(false);
         }
@@ -78,7 +84,6 @@ export const Player: FC = () => {
       return false;
     }
 
-    const demuxer = demuxerRef.current;
     if (decoderRef.current && decoderRef.current.state !== "closed") {
       console.log("Closing existing decoder.");
       decoderRef.current.close();
@@ -109,28 +114,52 @@ export const Player: FC = () => {
     return true;
   }, [screenDimensions]);
 
+  /** Time in seconds. */
+  const seek = async (time: number) => {
+    console.log(`Seeking to ${time}s`);
+
+    // const seekId = ++latestSeekId;
+    const decoder = decoderRef.current;
+    if (!decoder) {
+      console.error("Error seeking: no decoder.");
+      return;
+    }
+    demuxer
+      .seek("video", time)
+      .then((firstVideoChunk) => {
+        // if (seekId !== latestSeekId) {
+        //   console.log(`Discarding outdated seek to ${time}s`);
+        //   return;
+        // }
+        decoder.decode(firstVideoChunk);
+        decoder.flush();
+      })
+      .catch((error) => {
+        console.error(`Error seeking ${time}s:`, error);
+      });
+  };
+
+  const seekPercentage = useCallback(
+    async (percentage: number) => {
+      console.log(`Seeking to ${percentage} percentage`);
+      const time = percentage * (duration || 0);
+      seek(time);
+    },
+    [duration]
+  );
+
   // Handling canvas resize: setUpDecoder is updated upon dimension changes.
   useEffect(() => {
     if (!loading) {
       setUpDecoder().then((success) => {
         if (success) {
-          const decoder = decoderRef.current;
-          demuxerRef.current
-            .seek("video", 0)
-            .then((firstVideoChunk) => {
-              decoder?.decode(firstVideoChunk);
-              decoder?.flush();
-            })
-            .catch((error) => {
-              console.error("Error rendering first frame:", error);
-            });
+          seek(0);
         }
       });
     }
   }, [loading, setUpDecoder]);
 
   const handleOnClickPlay = async () => {
-    const demuxer = demuxerRef.current;
     const decoder = decoderRef.current;
 
     if (loading) {
@@ -171,7 +200,12 @@ export const Player: FC = () => {
         <Button onClick={handleOnClickPlay}>Play</Button>
       </div>
 
-      <PlayerControlOverlay />
+      <PlayerControlOverlay
+        duration={duration || 0}
+        seekPercentage={seekPercentage}
+        setProgress={setProgress}
+        progress={progress}
+      />
 
       <canvas
         id="example-play-canvas"

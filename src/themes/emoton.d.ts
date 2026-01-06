@@ -14,6 +14,11 @@ declare module "@emotion/react" {
         button: {
           color: string;
         };
+        progressBar: {
+          background: string;
+          hoverFill: string;
+          thumb: string;
+        };
       };
       root: {
         background: string;
