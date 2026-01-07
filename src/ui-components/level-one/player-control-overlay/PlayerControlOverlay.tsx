@@ -25,8 +25,9 @@ import { getProgressPercentageFromEvent } from "./getProgressPercentageFromEvent
 export interface PlayerControlOverlayProps {
   /* Duration in seconds. */
   duration: number;
-  /* Percentage from 0 to 1. */
-  seekPercentage(percentage: number): Promise<void>;
+  /* Time in seconds. */
+  seek(time: number): Promise<void>;
+  /* Set progress in seconds. */
   setProgress: Dispatch<SetStateAction<number>>;
   /* Progress in seconds. */
   progress: number;
@@ -34,7 +35,7 @@ export interface PlayerControlOverlayProps {
 
 export const PlayerControlOverlay: FC<PlayerControlOverlayProps> = ({
   duration,
-  seekPercentage,
+  seek,
   setProgress,
   progress,
 }) => {
@@ -79,18 +80,20 @@ export const PlayerControlOverlay: FC<PlayerControlOverlayProps> = ({
   };
 
   const handleOnMouseDownTrack: MouseEventHandler<HTMLDivElement> = (event) => {
+    // Prevent drag and drop.
     event.preventDefault();
-    console.log("Seeking started.");
     setIsSeeking(true);
     const percentage = getProgressPercentageFromEvent(
       event,
       progressBarContainerRef
     );
     console.log(
-      `Seeking to percentage ${percentage}, progress ${percentage * duration}`
+      `Seeking started at: percentage ${percentage}, progress ${
+        percentage * duration
+      }`
     );
-    seekPercentage(percentage);
-    setProgress(Math.floor(percentage * duration));
+    seek(duration * percentage);
+    setProgress(duration * percentage);
   };
   const handleOnMouseMoveTrack: MouseEventHandler<HTMLDivElement> = (event) => {
     const percentage = getProgressPercentageFromEvent(
@@ -109,16 +112,22 @@ export const PlayerControlOverlay: FC<PlayerControlOverlayProps> = ({
     );
     if (isSeeking) {
       console.log(
-        `Seeking to percentage ${percentage}, progress ${percentage * duration}`
+        `Seeking ended at: percentage ${percentage}, progress ${
+          percentage * duration
+        }`
       );
-      seekPercentage(percentage);
-      setProgress(Math.floor(percentage * duration));
+      setProgress(percentage * duration);
     }
   };
 
-  const handleOnMouseUpOverlay: MouseEventHandler<HTMLDivElement> = () => {
+  const handleOnMouseUpOverlay: MouseEventHandler<HTMLDivElement> = (event) => {
     if (isSeeking) {
+      const percentage = getProgressPercentageFromEvent(
+        event,
+        progressBarContainerRef
+      );
       console.log("Seeking ended.");
+      seek(duration * percentage);
       setIsSeeking(false);
     }
   };

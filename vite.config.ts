@@ -1,7 +1,6 @@
 import react from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
 import eslintPlugin from "vite-plugin-eslint";
-import { viteStaticCopy } from "vite-plugin-static-copy";
 
 const host = process.env.TAURI_DEV_HOST;
 
@@ -58,14 +57,6 @@ export default defineConfig({
       cache: false,
       include: ["./src/**/*.js", "./src/**/*.jsx"],
       exclude: [],
-    }),
-    viteStaticCopy({
-      targets: [
-        {
-          src: "./node_modules/web-demuxer/dist/wasm-files/*",
-          dest: "wasm-files/",
-        },
-      ],
     }),
   ],
 
