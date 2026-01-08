@@ -2,45 +2,80 @@ import {
   Dispatch,
   FC,
   MouseEventHandler,
+  RefObject,
   SetStateAction,
   useRef,
   useState,
 } from "react";
-import { InfoIcon } from "../../../assets/svgs/InfoIcon";
-import { ResizableWindow } from "../../base/resizable-window/ResizableWindow";
+import PauseIcon from "../../../assets/svgs/PauseIcon";
+import PlayIcon from "../../../assets/svgs/PlayIcon";
 import {
   bottomControlsContainerStyles,
-  infoButtonStyles,
-  infoWindowStyles,
+  buttonContainerStyles,
+  centerContainerStyles,
+  leftContainerStyles,
+  playButtonStyles,
   playerControlOverlayContainerStyles,
   progressBarContainerStyles,
   progressBarCurrentStyles,
-  progressBarHoverAreaStyles,
   progressbarThumbStyles,
   progressBarTrackFillStyles,
   progressBarTrackStyles,
+  rightContainerStyles,
 } from "./PlayerControlOverlay.styles";
 import { getProgressPercentageFromEvent } from "./getProgressPercentageFromEvent";
 
 export interface PlayerControlOverlayProps {
-  /* Duration in seconds. */
+  /**
+   * Duration in seconds.
+   */
   duration: number;
-  /* Time in seconds. */
-  seek(time: number): Promise<void>;
-  /* Set progress in seconds. */
-  setProgress: Dispatch<SetStateAction<number>>;
-  /* Progress in seconds. */
+  isPlaying: boolean;
+  /**
+   * Needs to be used in sync with setIsPlaying.
+   */
+  isPlayingRef: RefObject<boolean>;
+  pause: () => void;
+  /**
+   * Time in seconds.
+   */
+  play: (time: number) => Promise<void>;
+  /**
+   * Progress in seconds.
+   */
   progress: number;
+  progressRef: RefObject<number>;
+  /**
+   * Needs to be used in sync with isPlayingRef.
+   */
+  setIsPlaying: Dispatch<SetStateAction<boolean>>;
+  /**
+   * Time in seconds.
+   */
+  seek(time: number): Promise<void>;
+  /**
+   * Set progress in seconds.
+   */
+  setProgress: Dispatch<SetStateAction<number>>;
 }
 
 export const PlayerControlOverlay: FC<PlayerControlOverlayProps> = ({
   duration,
+  isPlaying,
+  isPlayingRef,
+  pause,
+  play,
+  progress,
+  progressRef,
+  setIsPlaying,
   seek,
   setProgress,
-  progress,
 }) => {
   const [isHovered, setIsHovered] = useState(false);
-  const [isVideoInfoWindowOpen, setIsVideoInfoWindowOpen] = useState(false);
+
+  // Only set when the user clicks on the progress bar while the video is playing.
+  // The video is first paused, and resumes when the user lifts the click.
+  const [resumePlaying, setResumePlaying] = useState(false);
   const [isProgressBarHovered, setIsProgressBarHovered] = useState(false);
   // HoverPercentage from 0 to 1. Undefined means not seeking.
   const [hoverPercentage, setHoverPercentage] = useState<number | undefined>(
@@ -51,12 +86,18 @@ export const PlayerControlOverlay: FC<PlayerControlOverlayProps> = ({
   // Percentage from 0 to 1.
   const percentage = progress / duration;
 
-  const handleOnClickInfoButton = () => {
-    setIsVideoInfoWindowOpen(!isVideoInfoWindowOpen);
-  };
+  const handleOnClickPlayButton = () => {
+    if (!isPlaying) {
+      setIsPlaying(true);
+      isPlayingRef.current = true;
 
-  const handleOnClickInfoWindowClose = () => {
-    setIsVideoInfoWindowOpen(false);
+      play(progress);
+    } else {
+      setIsPlaying(false);
+      isPlayingRef.current = false;
+
+      pause();
+    }
   };
 
   const handleOnMouseEnterOverlay = () => {
@@ -79,23 +120,39 @@ export const PlayerControlOverlay: FC<PlayerControlOverlayProps> = ({
     setHoverPercentage(undefined);
   };
 
-  const handleOnMouseDownTrack: MouseEventHandler<HTMLDivElement> = (event) => {
+  // Track mouseDown sets isSeeking to true and starts moving the progress bar.
+  // The user can move outside of the track as well, so the corresponding
+  // move and up handlers are the overlay's.
+  const handleOnMouseDownProgressBar: MouseEventHandler<HTMLDivElement> = (
+    event
+  ) => {
     // Prevent drag and drop.
-    event.preventDefault();
-    setIsSeeking(true);
-    const percentage = getProgressPercentageFromEvent(
-      event,
-      progressBarContainerRef
-    );
-    console.log(
-      `Seeking started at: percentage ${percentage}, progress ${
-        percentage * duration
-      }`
-    );
-    seek(duration * percentage);
-    setProgress(duration * percentage);
+    if (event.button === 0) {
+      event.preventDefault();
+      setIsSeeking(true);
+      const percentage = getProgressPercentageFromEvent(
+        event,
+        progressBarContainerRef
+      );
+
+      const newProgress = duration * percentage;
+      console.log(
+        `Seeking started at: percentage ${percentage}, progress ${newProgress}`
+      );
+
+      setProgress(newProgress);
+      progressRef.current = newProgress;
+      if (isPlaying) {
+        pause();
+
+        setResumePlaying(true);
+      }
+    }
   };
-  const handleOnMouseMoveTrack: MouseEventHandler<HTMLDivElement> = (event) => {
+
+  const handleOnMouseMoveProgressBar: MouseEventHandler<HTMLDivElement> = (
+    event
+  ) => {
     const percentage = getProgressPercentageFromEvent(
       event,
       progressBarContainerRef
@@ -110,25 +167,31 @@ export const PlayerControlOverlay: FC<PlayerControlOverlayProps> = ({
       event,
       progressBarContainerRef
     );
+    const newProgress = duration * percentage;
     if (isSeeking) {
       console.log(
-        `Seeking ended at: percentage ${percentage}, progress ${
-          percentage * duration
-        }`
+        `Seeking moving at: percentage ${percentage}, progress ${newProgress}`
       );
-      setProgress(percentage * duration);
+      setProgress(newProgress);
     }
   };
 
   const handleOnMouseUpOverlay: MouseEventHandler<HTMLDivElement> = (event) => {
     if (isSeeking) {
+      setIsSeeking(false);
       const percentage = getProgressPercentageFromEvent(
         event,
         progressBarContainerRef
       );
+      const newProgress = duration * percentage;
       console.log("Seeking ended.");
-      seek(duration * percentage);
-      setIsSeeking(false);
+
+      if (resumePlaying) {
+        play(newProgress);
+        setResumePlaying(false);
+      } else {
+        seek(newProgress);
+      }
     }
   };
 
@@ -142,11 +205,13 @@ export const PlayerControlOverlay: FC<PlayerControlOverlayProps> = ({
       onMouseUp={handleOnMouseUpOverlay}
     >
       <div css={bottomControlsContainerStyles}>
+        {/* ProgressBar container */}
         <div
           css={progressBarContainerStyles}
           data-is-progress-bar-hovered={isProgressBarHovered}
-          draggable
+          onMouseDown={handleOnMouseDownProgressBar}
           onMouseEnter={handleOnMouseEnterProgressBar}
+          onMouseMove={handleOnMouseMoveProgressBar}
           onMouseLeave={handleOnMouseLeaveProgressBar}
           ref={progressBarContainerRef}
         >
@@ -176,27 +241,21 @@ export const PlayerControlOverlay: FC<PlayerControlOverlayProps> = ({
               },
             ]}
           />
-          <div
-            css={progressBarHoverAreaStyles}
-            onMouseMove={handleOnMouseMoveTrack}
-            onMouseDown={handleOnMouseDownTrack}
-          />
         </div>
-        <button
-          aria-label="Video Info"
-          css={infoButtonStyles}
-          onClick={handleOnClickInfoButton}
-        >
-          <InfoIcon />
-        </button>
+        <div css={buttonContainerStyles}>
+          <div css={leftContainerStyles}>something left</div>
+          <div css={centerContainerStyles}>
+            <button
+              aria-label="Play"
+              css={playButtonStyles}
+              onClick={handleOnClickPlayButton}
+            >
+              {isPlaying ? <PauseIcon /> : <PlayIcon />}
+            </button>
+          </div>
+          <div css={rightContainerStyles}>something right</div>
+        </div>
       </div>
-      {isVideoInfoWindowOpen && (
-        <ResizableWindow
-          css={infoWindowStyles}
-          onClose={handleOnClickInfoWindowClose}
-          title={"Media Info"}
-        ></ResizableWindow>
-      )}
     </div>
   );
 };

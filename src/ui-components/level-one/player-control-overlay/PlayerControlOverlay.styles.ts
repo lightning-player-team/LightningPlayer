@@ -22,11 +22,6 @@ export const playerControlOverlayContainerStyles = css({
   // },
 });
 
-export const infoWindowStyles = css({
-  top: 20,
-  left: 20,
-});
-
 export const bottomControlsContainerStyles = css({
   alignItems: "center",
   bottom: 0,
@@ -36,7 +31,6 @@ export const bottomControlsContainerStyles = css({
   paddingLeft: 20,
   paddingRight: 20,
   position: "absolute",
-  rowGap: 10,
   width: "100%",
 });
 
@@ -44,6 +38,7 @@ export const progressBarContainerStyles = css({
   containerType: "size",
   position: "relative",
   display: "flex",
+  cursor: "pointer",
   flexDirection: "column",
   justifyContent: "center",
   width: "100%",
@@ -104,21 +99,32 @@ export const progressBarTrackFillStyles = (theme: Theme) =>
     position: "absolute",
   });
 
-export const progressBarHoverAreaStyles = css({
-  height: progressBarContainerHeight,
-  position: "absolute",
+export const buttonContainerStyles = css({
+  alignItems: "center",
+  display: "grid",
+  gridTemplateColumns: "auto 1fr auto",
+  marginBottom: 6,
   width: "100%",
-  cursor: "pointer",
 });
 
-export const infoButtonStyles = (theme: Theme) =>
+export const leftContainerStyles = css({
+  justifySelf: "start",
+});
+
+export const centerContainerStyles = css({
+  justifySelf: "center",
+});
+
+export const rightContainerStyles = css({
+  justifyContent: "end",
+});
+
+export const playButtonStyles = (theme: Theme) =>
   css({
     background: "transparent",
-    bottom: "20px",
     color: theme.colors.playerControls.button.color,
     border: "none",
-    height: 24,
-    width: 24,
+    lineHeight: 0,
     padding: 0,
-    fontSize: 24,
+    fontSize: 48,
   });

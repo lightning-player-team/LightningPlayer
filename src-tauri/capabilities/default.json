@@ -14,21 +14,6 @@
     "dialog:default",
     "opener:default",
     "fs:default",
-    {
-      "identifier": "shell:allow-execute",
-      "allow": [
-        {
-          "args": true,
-          "name": "binaries/ffmpeg",
-          "sidecar": true
-        },
-        {
-          "args": true,
-          "name": "binaries/ffprobe",
-          "sidecar": true
-        }
-      ]
-    },
     "shell:default"
   ]
 }

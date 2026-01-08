@@ -4,7 +4,10 @@ import { getCurrentWindow } from "@tauri-apps/api/window";
 import { DragEventHandler, FC, useEffect, useRef, useState } from "react";
 import { TauriDragEnterEventPayload } from "../../../shared/types/tauriEvent";
 import { dragAndDropOverlayContainerStyles } from "./DragAndDropOverlay.styles";
-import { DragAndDropResult, DragAndDropState } from "./DragAndDropOverlay.tc";
+import {
+  DragAndDropResult,
+  DragAndDropState,
+} from "./DragAndDropOverlay.types";
 
 export const DragAndDropOverlay: FC = () => {
   const [dragAndDropState, setDragAndDropState] = useState<DragAndDropResult>(
