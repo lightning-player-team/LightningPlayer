@@ -198,8 +198,7 @@ export const Player: FC = () => {
   };
 
   const handleResize = useCallback(() => {
-    // Sometimes a VideoSample is not closed after pause + resize.
-    // TODO: investigate why and fix.
+    // TODO: Sometimes a VideoSample is not closed after pause + resize.
     if (!isPlayingRef.current) {
       if (nextFrameRef.current) {
         nextFrameRef.current.close();
