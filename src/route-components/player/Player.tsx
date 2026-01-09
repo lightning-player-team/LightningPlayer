@@ -32,8 +32,7 @@ export const Player: FC = () => {
   // const [isPlaying, setIsPlaying] = useState<boolean>(false);
 
   const [isPlaying, setIsPlaying] = useState(false);
-  // Allows others (PlayerControlOverlay) to pause playback.
-  const isPlayingRef = useRef(false);
+
   // const audioContextStartTimeRef = useRef<number>(undefined);
 
   const fullscreenContainerRef = useRef<HTMLDivElement>(null);
@@ -199,7 +198,7 @@ export const Player: FC = () => {
 
   const handleResize = useCallback(() => {
     // TODO: Sometimes a VideoSample is not closed after pause + resize.
-    if (!isPlayingRef.current) {
+    if (!isPlaying) {
       if (nextFrameRef.current) {
         nextFrameRef.current.close();
       }
@@ -213,7 +212,9 @@ export const Player: FC = () => {
       setScreenDimensions(dimensions);
       screenDimensionsRef.current = dimensions;
     }
-  }, [seek]);
+  }, [isPlaying, seek]);
+
+  // TODO: handle resize due to TitleBar pinned state.
 
   // Setting up resize handler and clean ups.
   useEffect(() => {
@@ -222,7 +223,6 @@ export const Player: FC = () => {
     window.addEventListener("resize", handleResize);
     return () => {
       // Stop playback loop on unmount.
-      isPlayingRef.current = false;
       if (playRAFRef.current) {
         cancelAnimationFrame(playRAFRef.current);
       }
@@ -300,7 +300,6 @@ export const Player: FC = () => {
       <PlayerControlOverlay
         duration={duration}
         isPlaying={isPlaying}
-        isPlayingRef={isPlayingRef}
         pause={pause}
         play={play}
         progress={progress}
@@ -311,7 +310,6 @@ export const Player: FC = () => {
       />
 
       <canvas
-        id="example-play-canvas"
         width={screenDimensions?.width}
         height={screenDimensions?.height}
         ref={canvasRef}
