@@ -58,6 +58,7 @@ UI components in `src/ui-components/`:
 ### Coding Style
 
 - All fields in objects, types, interfaces, enums, and function parameters are alphanumerically sorted. When doing this in styles files, CSS selectors (like &:hover, [data-...]) need to be kept at the end and retain their original order to preserve cascade behavior.
+- When debugging or making changes, keep debug comments such as `console.log` or at least comment them out instead of removing them.
 
 ## Implementation Notes
 

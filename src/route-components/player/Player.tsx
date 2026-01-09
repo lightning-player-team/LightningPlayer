@@ -2,11 +2,11 @@ import { useAtomValue } from "jotai";
 import {
   ALL_FORMATS,
   BlobSource,
+  CanvasSink,
   Input,
   InputAudioTrack,
   InputVideoTrack,
-  VideoSample,
-  VideoSampleSink,
+  WrappedCanvas,
 } from "mediabunny";
 import { FC, useCallback, useEffect, useRef, useState } from "react";
 import { inputFilesState } from "../../shared/atoms/inputFilesState";
@@ -25,38 +25,37 @@ export const Player: FC = () => {
   const progressRef = useRef(0);
   const [_audioTracks, setAudioTracks] = useState<InputAudioTrack[]>([]);
   const [_videoTracks, setVideoTracks] = useState<InputVideoTrack[]>([]);
+  const [currentVideoSink, setCurrentVideoSink] = useState<CanvasSink>();
   const [duration, setDuration] = useState<number>(0);
-  const [currentVideoSink, setCurrentVideoSink] = useState<VideoSampleSink>();
   // const [audioContext, setAudioContext] = useState<AudioContext>();
   const [_currentAudioTrack, setCurrentAudioTrack] =
     useState<InputAudioTrack>();
   // const [isPlaying, setIsPlaying] = useState<boolean>(false);
 
   const [isPlaying, setIsPlaying] = useState(false);
-  // For manually closing nextFrame.
-  const isPlayingRef = useRef(false);
 
   // const audioContextStartTimeRef = useRef<number>(undefined);
 
   const fullscreenContainerRef = useRef<HTMLDivElement>(null);
   const screenDimensionsRef = useRef<Dimensions>(null);
-  const [screenDimensions, setScreenDimensions] = useState<Dimensions>();
 
   // Play function's requestAnimationFrame ref.
   const playRAFRef = useRef<number>(null);
-  // Used by the play loop to keep track of nextFrame for clean up when playback is paused
-  // and nextFrame should be discard (e.g. when window is resized or closed).
-  const nextFrameRef = useRef<VideoSample | void>(null);
+  // Used by the play loop to keep track of the frame to render.
+  const currentFrameRef = useRef<WrappedCanvas | undefined>(undefined);
+  // Canvas iterator ref for proper cleanup.
+  const canvasIteratorRef = useRef<ReturnType<CanvasSink["canvases"]>>(null);
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   /**
    * Seek to time in seconds.
-   * */
+   */
   const seek = useCallback(
     async (time: number) => {
+      console.log(`seek: started for ${time}.`);
       if (!currentVideoSink) {
-        console.log("Error seeking: no currentVideoSink.");
+        console.log("Error seeking: no currentCanvasSink.");
         return;
       }
 
@@ -66,13 +65,18 @@ export const Player: FC = () => {
         return;
       }
 
-      const videoSample = await currentVideoSink.getSample(time);
-      if (!videoSample) {
-        console.error("Error seeking: getSample failed.");
+      const wrappedCanvas = await currentVideoSink.getCanvas(time);
+      if (!wrappedCanvas) {
+        console.error("Error seeking: getCanvas failed.");
         return;
       }
 
-      draw({ screenDimensions: screenDimensionsRef.current, videoSample, ctx });
+      currentFrameRef.current = wrappedCanvas;
+      draw({
+        ctx,
+        screenDimensions: screenDimensionsRef.current,
+        wrappedCanvas,
+      });
     },
     [currentVideoSink]
   );
@@ -82,6 +86,7 @@ export const Player: FC = () => {
    */
   const play = useCallback(
     async (time: number) => {
+      console.log(`play: started for ${time}`);
       if (!currentVideoSink) {
         console.log("Error playing: no currentVideoSink.");
         return;
@@ -94,42 +99,39 @@ export const Player: FC = () => {
         return;
       }
 
-      const videoSampleIterator = await currentVideoSink.samples(time);
-      const nextFrame = (await videoSampleIterator.next()).value;
-      if (!nextFrame) {
+      // Dispose previous iterator before creating a new one.
+      canvasIteratorRef.current?.return?.();
+      const canvasIterator = currentVideoSink.canvases(time);
+      canvasIteratorRef.current = canvasIterator;
+      const firstFrame = (await canvasIterator.next()).value;
+      if (!firstFrame) {
         console.error("Error playing: no start frame.");
         return;
       }
-      nextFrameRef.current = nextFrame;
+      currentFrameRef.current = firstFrame;
 
       const getNextFrame = async (timestamp: number) => {
         // Possible to skip multiple frames when the video's fps is
         // higher than what the webview can handle.
         while (true) {
-          const nextFrame = (await videoSampleIterator.next()).value;
-          // If playback was stopped while awaiting, close the frame immediately.
-          if (!isPlayingRef.current) {
-            nextFrame?.close();
-            return;
-          }
+          const nextFrame = (await canvasIterator.next()).value;
           if (!nextFrame) {
+            console.log("getNextFrame: no next frame.");
             return;
-          } else {
-            if (nextFrame.timestamp >= timestamp) {
-              nextFrameRef.current = nextFrame;
-              return;
-            } else {
-              nextFrame.close();
-            }
           }
+          if (nextFrame.timestamp >= timestamp) {
+            currentFrameRef.current = nextFrame;
+            return;
+          }
+          // Skipping frames until we reach the target timestamp.
         }
       };
 
-      const startTimestampInVideo = nextFrame.timestamp;
+      const startTimestampInVideo = firstFrame.timestamp;
       let startTimestamp: number | undefined = undefined;
 
       const playLoop = (timestamp: number) => {
-        const nextFrame = nextFrameRef.current;
+        const nextFrame = currentFrameRef.current;
 
         if (startTimestamp === undefined) {
           startTimestamp = timestamp;
@@ -139,8 +141,7 @@ export const Player: FC = () => {
 
         if (!nextFrame) {
           if (timestampInVideo >= duration) {
-            console.log("Playback finished: no next frame.");
-            isPlayingRef.current = false;
+            console.log("playLoop: playback finished: no next frame.");
             setIsPlaying(false);
             return;
           } else {
@@ -156,11 +157,11 @@ export const Player: FC = () => {
 
         if (nextFrame.timestamp <= timestampInVideo) {
           draw({
-            screenDimensions: screenDimensionsRef.current,
-            videoSample: nextFrame,
             ctx,
+            screenDimensions: screenDimensionsRef.current,
+            wrappedCanvas: nextFrame,
           });
-          nextFrameRef.current = undefined;
+          currentFrameRef.current = undefined;
 
           setProgress(timestampInVideo);
           progressRef.current = timestampInVideo;
@@ -170,46 +171,55 @@ export const Player: FC = () => {
         playRAFRef.current = requestAnimationFrame(playLoop);
       };
 
-      isPlayingRef.current = true;
       setIsPlaying(true);
       requestAnimationFrame(playLoop);
-      console.log("Playback started.");
+      console.log("play: started.");
     },
     [currentVideoSink, duration]
   );
 
   const pause = () => {
-    console.log("Pausing.");
-
+    console.log("pause.");
     if (playRAFRef.current) {
       cancelAnimationFrame(playRAFRef.current);
-      if (nextFrameRef.current) {
-        nextFrameRef.current.close();
-        nextFrameRef.current = undefined;
-      }
-    } else {
-      console.error("Error pausing: unexpected.");
     }
-    isPlayingRef.current = false;
+    // Dispose iterator to release VideoSample resources.
+    canvasIteratorRef.current?.return?.();
     setIsPlaying(false);
   };
 
+  /**
+   * Update canvas dimensions, and redraw if current frame exists.
+   */
   const handleResize = useCallback(() => {
-    if (!isPlaying) {
-      if (nextFrameRef.current) {
-        nextFrameRef.current.close();
-      }
-      seek(progressRef.current);
-    }
-    if (fullscreenContainerRef.current) {
+    if (fullscreenContainerRef.current && canvasRef.current) {
       const dimensions = {
-        width: fullscreenContainerRef.current.offsetWidth,
         height: fullscreenContainerRef.current.offsetHeight,
+        width: fullscreenContainerRef.current.offsetWidth,
       };
-      setScreenDimensions(dimensions);
       screenDimensionsRef.current = dimensions;
+
+      // Update canvas dimensions imperatively to avoid React re-render flash.
+      // Changing width/height clears the canvas, so we redraw immediately after.
+      canvasRef.current.width = dimensions.width;
+      canvasRef.current.height = dimensions.height;
+
+      if (currentFrameRef.current) {
+        const ctx = canvasRef.current?.getContext("2d");
+        if (!ctx) {
+          console.error("Error seeking: no 2D context.");
+          return;
+        }
+
+        // Redraw immediately after dimension change.
+        draw({
+          ctx,
+          screenDimensions: screenDimensionsRef.current,
+          wrappedCanvas: currentFrameRef.current,
+        });
+      }
     }
-  }, [isPlaying, seek]);
+  }, []);
 
   // TODO: handle resize due to TitleBar pinned state.
 
@@ -223,19 +233,19 @@ export const Player: FC = () => {
     };
   }, [handleResize]);
 
+  // Rendering the first frame on load.
+  useEffect(() => {
+    seek(0);
+  }, [seek]);
+
   // Playback cleanup on unmount only.
   useEffect(() => {
     return () => {
-      // Stop playback loop on unmount.
       if (playRAFRef.current) {
         cancelAnimationFrame(playRAFRef.current);
       }
-      // Signal async getNextFrame to clean up.
-      isPlayingRef.current = false;
-      // Clean up nextFrame.
-      if (nextFrameRef.current) {
-        nextFrameRef.current.close();
-      }
+      // Dispose iterator to release VideoSample resources.
+      canvasIteratorRef.current?.return?.();
     };
   }, []);
 
@@ -269,7 +279,7 @@ export const Player: FC = () => {
       const audioTracks = await input.getAudioTracks();
 
       const duration = await videoTracks[0].computeDuration();
-      const currentVideoSink = new VideoSampleSink(videoTracks[0]);
+      const videoSink = new CanvasSink(videoTracks[0]);
       const currentAudioTrack = audioTracks[0];
       const audioContext = new AudioContext({
         sampleRate: currentAudioTrack?.sampleRate,
@@ -279,12 +289,10 @@ export const Player: FC = () => {
 
       if (!unmounted) {
         setAudioTracks(audioTracks);
-        setVideoTracks(videoTracks);
-        setCurrentVideoSink(currentVideoSink);
         setCurrentAudioTrack(currentAudioTrack);
-
-        // setAudioContext(audioContext);
+        setCurrentVideoSink(videoSink);
         setDuration(duration);
+        setVideoTracks(videoTracks);
       }
     };
 
@@ -312,11 +320,7 @@ export const Player: FC = () => {
         setProgress={setProgress}
       />
 
-      <canvas
-        width={screenDimensions?.width}
-        height={screenDimensions?.height}
-        ref={canvasRef}
-      />
+      <canvas ref={canvasRef} />
     </FullscreenContainer>
   );
 };

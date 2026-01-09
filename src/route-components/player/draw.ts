@@ -1,30 +1,29 @@
-import { VideoSample } from "mediabunny";
+import { WrappedCanvas } from "mediabunny";
 import { Dimensions } from "../../shared/types/dimensions";
 
 /**
- * Tries to draw the VideoSample to canvas and closes it.
- *  */
+ * Draws the WrappedCanvas to the target canvas context.
+ */
 export const draw = ({
-  screenDimensions,
-  videoSample,
   ctx,
+  screenDimensions,
+  wrappedCanvas,
 }: {
-  screenDimensions: Dimensions | null;
-  videoSample: VideoSample;
   ctx: CanvasRenderingContext2D;
+  screenDimensions: Dimensions | null;
+  wrappedCanvas: WrappedCanvas;
 }) => {
   if (!screenDimensions) {
     console.error("Error drawing: no screen dimensions.");
-    videoSample.close();
     return;
   }
 
-  const { displayWidth, displayHeight } = videoSample;
-  const widthScale = screenDimensions.width / displayWidth;
-  const heightScale = screenDimensions.height / displayHeight;
+  const { canvas } = wrappedCanvas;
+  const heightScale = screenDimensions.height / canvas.height;
+  const widthScale = screenDimensions.width / canvas.width;
   const scale = Math.min(widthScale, heightScale);
-  const dw = displayWidth * scale;
-  const dh = displayHeight * scale;
+  const dh = canvas.height * scale;
+  const dw = canvas.width * scale;
   let dx = 0;
   let dy = 0;
   if (widthScale < heightScale) {
@@ -32,6 +31,5 @@ export const draw = ({
   } else {
     dx = (screenDimensions.width - dw) / 2;
   }
-  videoSample.draw(ctx, dx, dy, dw, dh);
-  videoSample.close();
+  ctx.drawImage(canvas, dx, dy, dw, dh);
 };
