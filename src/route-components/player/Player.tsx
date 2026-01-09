@@ -11,6 +11,7 @@ import {
 import { FC, useCallback, useEffect, useRef, useState } from "react";
 import { inputFilesState } from "../../shared/atoms/inputFilesState";
 import { Dimensions } from "../../shared/types/dimensions";
+import { debounce } from "../../shared/utils/debounce";
 import { isTruthy } from "../../shared/utils/isTruthy";
 import { FullscreenContainer } from "../../ui-components/base/fullscreen-container/FullscreenContainer";
 import { PlayerControlOverlay } from "../../ui-components/level-one/player-control-overlay/PlayerControlOverlay";
@@ -227,9 +228,10 @@ export const Player: FC = () => {
   useEffect(() => {
     // Initialize dimensions on mount.
     handleResize();
-    window.addEventListener("resize", handleResize);
+    const debouncedHandleResize = debounce(handleResize, 10);
+    window.addEventListener("resize", debouncedHandleResize);
     return () => {
-      window.removeEventListener("resize", handleResize);
+      window.removeEventListener("resize", debouncedHandleResize);
     };
   }, [handleResize]);
 
@@ -255,7 +257,7 @@ export const Player: FC = () => {
 
     console.log("files:", files);
 
-    const readFileMedadata = async () => {
+    const readFileMetadata = async () => {
       if (!files || files.length <= 0) {
         console.log("No files provided to Player.");
         return;
@@ -296,7 +298,11 @@ export const Player: FC = () => {
       }
     };
 
-    readFileMedadata();
+    try {
+      readFileMetadata();
+    } catch (error) {
+      console.error(error);
+    }
 
     return () => {
       unmounted = true;
