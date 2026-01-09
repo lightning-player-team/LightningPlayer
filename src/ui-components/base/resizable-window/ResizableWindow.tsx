@@ -17,15 +17,15 @@ import {
 } from "./ResizableWindow.styles";
 
 export interface IResizableWindowProps {
-  className?: string;
   children?: ReactNode;
+  className?: string;
   onClose?: () => void;
   title?: string;
 }
 
 export const ResizableWindow: FC<IResizableWindowProps> = ({
-  className,
   children,
+  className,
   onClose,
   title,
 }) => {

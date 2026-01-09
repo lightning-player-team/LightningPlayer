@@ -35,16 +35,16 @@ export const bottomControlsContainerStyles = css({
 });
 
 export const progressBarContainerStyles = css({
-  containerType: "size",
-  position: "relative",
-  display: "flex",
-  cursor: "pointer",
-  flexDirection: "column",
-  justifyContent: "center",
-  width: "100%",
-  height: progressBarContainerHeight,
-  overflow: "visible",
   backgroundColor: "transparent",
+  containerType: "size",
+  cursor: "pointer",
+  display: "flex",
+  flexDirection: "column",
+  height: progressBarContainerHeight,
+  justifyContent: "center",
+  overflow: "visible",
+  position: "relative",
+  width: "100%",
 });
 
 export const progressBarCurrentStyles = (theme: Theme) =>
@@ -63,12 +63,12 @@ export const progressBarCurrentStyles = (theme: Theme) =>
 
 export const progressbarThumbStyles = (theme: Theme) =>
   css({
-    position: "absolute",
+    backgroundColor: theme.colors.playerControls.progressBar.thumb,
     borderRadius: "50%",
     height: progressBarThumbRadius * 2,
-    width: progressBarThumbRadius * 2,
-    backgroundColor: theme.colors.playerControls.progressBar.thumb,
+    position: "absolute",
     transition: `scale ${transitionDuration} ${transitionTimingFunction}`,
+    width: progressBarThumbRadius * 2,
 
     "[data-is-progress-bar-hovered=true] &": {
       transform: `scale(${
@@ -122,9 +122,9 @@ export const rightContainerStyles = css({
 export const playButtonStyles = (theme: Theme) =>
   css({
     background: "transparent",
-    color: theme.colors.playerControls.button.color,
     border: "none",
+    color: theme.colors.playerControls.button.color,
+    fontSize: 48,
     lineHeight: 0,
     padding: 0,
-    fontSize: 48,
   });

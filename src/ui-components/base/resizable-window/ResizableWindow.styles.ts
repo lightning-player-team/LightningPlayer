@@ -6,11 +6,11 @@ export const WINDOW_TITLE_BAR_CLASSNAME = "titlebar";
 
 export const resizableWindowContainerStyles = (theme: Theme) =>
   css({
-    height: 400,
-    width: 300,
-    position: "absolute",
     display: "flex",
     flexDirection: "column",
+    height: 400,
+    position: "absolute",
+    width: 300,
     "&:focus [data-window-title-bar]": {
       backgroundColor: theme.colors.titleBar.activeBackground,
     },
@@ -47,19 +47,19 @@ export const resizeRegionRightStyles = css({
 
 export const titleBarStyles = (theme: Theme) =>
   css({
-    height: WINDOW_TITLE_BAR_HEIGHT,
-    width: "100%",
     backgroundColor: theme.colors.titleBar.inactiveBackground,
     display: "grid",
     gridTemplateColumns: "auto max-content",
+    height: WINDOW_TITLE_BAR_HEIGHT,
+    width: "100%",
   });
 
 export const contentContainerStyles = (theme: Theme) =>
   css({
-    flex: 1,
-    display: "flex",
-    flexDirection: "column",
     backgroundColor: theme.colors.window.background,
+    display: "flex",
+    flex: 1,
+    flexDirection: "column",
     overflow: "auto",
     padding: 8,
   });

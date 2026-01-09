@@ -42,10 +42,6 @@ export interface PlayerControlOverlayProps {
   progress: number;
   progressRef: RefObject<number>;
   /**
-   * Needs to be used in sync with isPlayingRef.
-   */
-  setIsPlaying: Dispatch<SetStateAction<boolean>>;
-  /**
    * Time in seconds.
    */
   seek(time: number): Promise<void>;
@@ -62,7 +58,6 @@ export const PlayerControlOverlay: FC<PlayerControlOverlayProps> = ({
   play,
   progress,
   progressRef,
-  setIsPlaying,
   seek,
   setProgress,
 }) => {
@@ -83,12 +78,8 @@ export const PlayerControlOverlay: FC<PlayerControlOverlayProps> = ({
 
   const handleOnClickPlayButton = () => {
     if (!isPlaying) {
-      setIsPlaying(true);
-
       play(progress);
     } else {
-      setIsPlaying(false);
-
       pause();
     }
   };

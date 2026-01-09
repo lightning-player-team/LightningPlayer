@@ -23,15 +23,18 @@ export const Player: FC = () => {
   const [progress, setProgress] = useState(0);
   // Avoids relying on progess in the resize handler.
   const progressRef = useRef(0);
-  const [audioTracks, setAudioTracks] = useState<InputAudioTrack[]>([]);
-  const [videoTracks, setVideoTracks] = useState<InputVideoTrack[]>([]);
+  const [_audioTracks, setAudioTracks] = useState<InputAudioTrack[]>([]);
+  const [_videoTracks, setVideoTracks] = useState<InputVideoTrack[]>([]);
   const [duration, setDuration] = useState<number>(0);
   const [currentVideoSink, setCurrentVideoSink] = useState<VideoSampleSink>();
   // const [audioContext, setAudioContext] = useState<AudioContext>();
-  const [currentAudioTrack, setCurrentAudioTrack] = useState<InputAudioTrack>();
+  const [_currentAudioTrack, setCurrentAudioTrack] =
+    useState<InputAudioTrack>();
   // const [isPlaying, setIsPlaying] = useState<boolean>(false);
 
   const [isPlaying, setIsPlaying] = useState(false);
+  // For manually closing nextFrame.
+  const isPlayingRef = useRef(false);
 
   // const audioContextStartTimeRef = useRef<number>(undefined);
 
@@ -69,14 +72,7 @@ export const Player: FC = () => {
         return;
       }
 
-      const screenDimensions = screenDimensionsRef.current;
-      if (!screenDimensions) {
-        console.error("Error seeking: no screen dimensions.");
-        return;
-      }
-
-      draw({ screenDimensions, videoSample, ctx });
-      videoSample.close();
+      draw({ screenDimensions: screenDimensionsRef.current, videoSample, ctx });
     },
     [currentVideoSink]
   );
@@ -100,23 +96,27 @@ export const Player: FC = () => {
 
       const videoSampleIterator = await currentVideoSink.samples(time);
       const nextFrame = (await videoSampleIterator.next()).value;
-      nextFrameRef.current = nextFrame;
-
       if (!nextFrame) {
         console.error("Error playing: no start frame.");
         return;
       }
+      nextFrameRef.current = nextFrame;
 
       const getNextFrame = async (timestamp: number) => {
         // Possible to skip multiple frames when the video's fps is
         // higher than what the webview can handle.
         while (true) {
           const nextFrame = (await videoSampleIterator.next()).value;
-          nextFrameRef.current = nextFrame;
+          // If playback was stopped while awaiting, close the frame immediately.
+          if (!isPlayingRef.current) {
+            nextFrame?.close();
+            return;
+          }
           if (!nextFrame) {
             return;
           } else {
             if (nextFrame.timestamp >= timestamp) {
+              nextFrameRef.current = nextFrame;
               return;
             } else {
               nextFrame.close();
@@ -128,46 +128,39 @@ export const Player: FC = () => {
       const startTimestampInVideo = nextFrame.timestamp;
       let startTimestamp: number | undefined = undefined;
 
-      /**
-       * TODO 1: Sometimes if user tries to resume at end of the video, can get:
-       * "Uncaught Error: VideoSample is closed".
-       *
-       * TODO 2: Random "A VideoSample was garbage collected without first being closed...".
-       *
-       *  */
       const playLoop = (timestamp: number) => {
         const nextFrame = nextFrameRef.current;
-        if (!nextFrame) {
-          console.log("Playback finished: no next frame.");
-          setIsPlaying(false);
-          return;
-        }
 
         if (startTimestamp === undefined) {
           startTimestamp = timestamp;
         }
-        const elapsedTimeInSeconds = (timestamp - startTimestamp) / 1000;
-        const timestampInVideo = startTimestampInVideo + elapsedTimeInSeconds;
+        const timestampInVideo =
+          startTimestampInVideo + (timestamp - startTimestamp) / 1000;
 
-        console.log(timestamp, nextFrame?.timestamp, timestampInVideo);
-
-        // TODO: This is sometimes triggered - figure out why.
-        if (timestampInVideo > duration) {
-          console.log("Playback finished.");
-          setIsPlaying(false);
-          nextFrame.close();
-          return;
-        }
-
-        if (nextFrame.timestamp <= timestampInVideo) {
-          const screenDimensions = screenDimensionsRef.current;
-          if (!screenDimensions) {
-            console.error("Error playing: no screen dimensions.");
+        if (!nextFrame) {
+          if (timestampInVideo >= duration) {
+            console.log("Playback finished: no next frame.");
+            isPlayingRef.current = false;
+            setIsPlaying(false);
+            return;
+          } else {
+            console.log(
+              "Waiting for getNextFrame to resolve, skipping animation frame..."
+            );
+            playRAFRef.current = requestAnimationFrame(playLoop);
             return;
           }
+        }
 
-          draw({ screenDimensions, videoSample: nextFrame, ctx });
-          nextFrame.close();
+        // console.log(timestamp, nextFrame?.timestamp, timestampInVideo);
+
+        if (nextFrame.timestamp <= timestampInVideo) {
+          draw({
+            screenDimensions: screenDimensionsRef.current,
+            videoSample: nextFrame,
+            ctx,
+          });
+          nextFrameRef.current = undefined;
 
           setProgress(timestampInVideo);
           progressRef.current = timestampInVideo;
@@ -177,6 +170,8 @@ export const Player: FC = () => {
         playRAFRef.current = requestAnimationFrame(playLoop);
       };
 
+      isPlayingRef.current = true;
+      setIsPlaying(true);
       requestAnimationFrame(playLoop);
       console.log("Playback started.");
     },
@@ -187,17 +182,19 @@ export const Player: FC = () => {
     console.log("Pausing.");
 
     if (playRAFRef.current) {
+      cancelAnimationFrame(playRAFRef.current);
       if (nextFrameRef.current) {
         nextFrameRef.current.close();
+        nextFrameRef.current = undefined;
       }
-      cancelAnimationFrame(playRAFRef.current);
     } else {
       console.error("Error pausing: unexpected.");
     }
+    isPlayingRef.current = false;
+    setIsPlaying(false);
   };
 
   const handleResize = useCallback(() => {
-    // TODO: Sometimes a VideoSample is not closed after pause + resize.
     if (!isPlaying) {
       if (nextFrameRef.current) {
         nextFrameRef.current.close();
@@ -216,24 +213,31 @@ export const Player: FC = () => {
 
   // TODO: handle resize due to TitleBar pinned state.
 
-  // Setting up resize handler and clean ups.
+  // Setting up resize handler.
   useEffect(() => {
     // Initialize dimensions on mount.
     handleResize();
     window.addEventListener("resize", handleResize);
     return () => {
+      window.removeEventListener("resize", handleResize);
+    };
+  }, [handleResize]);
+
+  // Playback cleanup on unmount only.
+  useEffect(() => {
+    return () => {
       // Stop playback loop on unmount.
       if (playRAFRef.current) {
         cancelAnimationFrame(playRAFRef.current);
       }
+      // Signal async getNextFrame to clean up.
+      isPlayingRef.current = false;
       // Clean up nextFrame.
       if (nextFrameRef.current) {
         nextFrameRef.current.close();
       }
-
-      window.removeEventListener("resize", handleResize);
     };
-  }, [handleResize]);
+  }, []);
 
   // Load files.
   useEffect(() => {
@@ -304,7 +308,6 @@ export const Player: FC = () => {
         play={play}
         progress={progress}
         progressRef={progressRef}
-        setIsPlaying={setIsPlaying}
         seek={seek}
         setProgress={setProgress}
       />

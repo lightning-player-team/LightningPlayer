@@ -1,18 +1,24 @@
 import { VideoSample } from "mediabunny";
-import { Dimensions } from "../../shared/hooks/useDimensions";
+import { Dimensions } from "../../shared/types/dimensions";
 
 /**
- * Draw the VideoSample to canvas.
+ * Tries to draw the VideoSample to canvas and closes it.
  *  */
 export const draw = ({
   screenDimensions,
   videoSample,
   ctx,
 }: {
-  screenDimensions: Dimensions;
+  screenDimensions: Dimensions | null;
   videoSample: VideoSample;
   ctx: CanvasRenderingContext2D;
 }) => {
+  if (!screenDimensions) {
+    console.error("Error drawing: no screen dimensions.");
+    videoSample.close();
+    return;
+  }
+
   const { displayWidth, displayHeight } = videoSample;
   const widthScale = screenDimensions.width / displayWidth;
   const heightScale = screenDimensions.height / displayHeight;
@@ -27,4 +33,5 @@ export const draw = ({
     dx = (screenDimensions.width - dw) / 2;
   }
   videoSample.draw(ctx, dx, dy, dw, dh);
+  videoSample.close();
 };
