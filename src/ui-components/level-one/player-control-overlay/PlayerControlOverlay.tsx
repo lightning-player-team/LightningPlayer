@@ -2,7 +2,6 @@ import {
   Dispatch,
   FC,
   MouseEventHandler,
-  RefObject,
   SetStateAction,
   useRef,
   useState,
@@ -40,7 +39,6 @@ export interface PlayerControlOverlayProps {
    * Progress in seconds.
    */
   progress: number;
-  progressRef: RefObject<number>;
   /**
    * Time in seconds.
    */
@@ -57,7 +55,6 @@ export const PlayerControlOverlay: FC<PlayerControlOverlayProps> = ({
   pause,
   play,
   progress,
-  progressRef,
   seek,
   setProgress,
 }) => {
@@ -125,7 +122,6 @@ export const PlayerControlOverlay: FC<PlayerControlOverlayProps> = ({
       );
 
       setProgress(newProgress);
-      progressRef.current = newProgress;
       if (isPlaying) {
         pause();
 
