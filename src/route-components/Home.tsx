@@ -1,4 +1,3 @@
-import { open } from "@tauri-apps/plugin-dialog";
 import { useSetAtom } from "jotai";
 import { FC, useRef } from "react";
 import { useNavigate } from "react-router";
@@ -36,16 +35,7 @@ export const Home: FC = () => {
     }
   };
 
-  const handleOnClickOpenFolder = async () => {
-    const path = await open({
-      directory: true,
-    });
-    if (path) {
-      console.log("Selected folder:", path);
-    } else {
-      console.error("No folder selected.");
-    }
-  };
+  const handleOnClickOpenFolder = async () => {};
 
   return (
     <FullscreenContainer>
