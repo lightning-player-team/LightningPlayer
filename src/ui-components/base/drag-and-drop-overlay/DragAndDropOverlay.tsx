@@ -1,88 +1,90 @@
-import { invoke } from "@tauri-apps/api/core";
-import { EventCallback, TauriEvent } from "@tauri-apps/api/event";
-import { getCurrentWindow } from "@tauri-apps/api/window";
+import { useSetAtom } from "jotai";
 import { DragEventHandler, FC, useEffect, useRef, useState } from "react";
-import { TauriDragEnterEventPayload } from "../../../shared/types/tauriEvent";
+import { useNavigate } from "react-router";
+import { ROUTES } from "../../../route-components/routes";
+import { inputFilesState } from "../../../shared/atoms/inputFilesState";
+import { handleInputFiles } from "../../../shared/utils/handleInputFiles";
 import { dragAndDropOverlayContainerStyles } from "./DragAndDropOverlay.styles";
-import {
-  DragAndDropResult,
-  DragAndDropState,
-} from "./DragAndDropOverlay.types";
+import { DragAndDropState } from "./DragAndDropOverlay.types";
 
 export const DragAndDropOverlay: FC = () => {
-  const [dragAndDropState, setDragAndDropState] = useState<DragAndDropResult>(
+  const [dragAndDropState, setDragAndDropState] = useState<DragAndDropState>(
     DragAndDropState.None
   );
-  const appWindow = getCurrentWindow();
+  const navigate = useNavigate();
+
+  const setInputFiles = useSetAtom(inputFilesState);
   const dropZoneRef = useRef<HTMLDivElement>(null);
 
-  const handleDrag: DragEventHandler<HTMLDivElement> = (e) => {
-    console.log("Drag: ", e);
-  };
-
+  // Listen at document level to detect drag start/end and prevent browser default file opening
   useEffect(() => {
-    const handleDragEnter: EventCallback<TauriDragEnterEventPayload> = async ({
-      payload,
-    }) => {
-      setDragAndDropState(DragAndDropState.Processing);
-      try {
-        const paths = await invoke("process_paths", {
-          paths: payload.paths,
-        });
-        console.log(paths);
-        setDragAndDropState(paths as string[]);
-      } catch (error) {
-        if (error === "No valid files") {
-          console.log(error);
-          setDragAndDropState(DragAndDropState.FileNotSupported);
-        }
+    const handleDocumentDragEnter = (event: DragEvent) => {
+      if (event.dataTransfer?.types.includes("Files")) {
+        event.preventDefault();
+        setDragAndDropState(DragAndDropState.Dragging);
       }
     };
-    const handleDragLeave = async () => {
-      setDragAndDropState(DragAndDropState.None);
-    };
-    const handleDragDrop = async () => {
-      setDragAndDropState(DragAndDropState.None);
+
+    const handleDocumentDragOver = (event: DragEvent) => {
+      // Must preventDefault on dragover to allow drop and prevent browser opening the file
+      if (event.dataTransfer?.types.includes("Files")) {
+        event.preventDefault();
+      }
     };
 
-    const unlistenDragEnter = appWindow.listen(
-      TauriEvent.DRAG_ENTER,
-      handleDragEnter
-    );
-    const unlistenDragLeave = appWindow.listen(
-      TauriEvent.DRAG_LEAVE,
-      handleDragLeave
-    );
-    const unlistenDragDrop = appWindow.listen(
-      TauriEvent.DRAG_DROP,
-      handleDragDrop
-    );
-    return () => {
-      unlistenDragEnter.then((unlistenFn) => unlistenFn());
-      unlistenDragLeave.then((unlistenFn) => unlistenFn());
-      unlistenDragDrop.then((unlistenFn) => unlistenFn());
+    const handleDocumentDragLeave = (event: DragEvent) => {
+      // relatedTarget is null when drag leaves the window entirely
+      if (event.relatedTarget === null) {
+        setDragAndDropState(DragAndDropState.None);
+      }
     };
-  }, [appWindow]);
+
+    const handleDocumentDrop = (event: DragEvent) => {
+      // Prevent browser from opening the file if drop happens outside overlay
+      event.preventDefault();
+    };
+
+    document.addEventListener("dragenter", handleDocumentDragEnter);
+    document.addEventListener("dragover", handleDocumentDragOver);
+    document.addEventListener("dragleave", handleDocumentDragLeave);
+    document.addEventListener("drop", handleDocumentDrop);
+    return () => {
+      document.removeEventListener("dragenter", handleDocumentDragEnter);
+      document.removeEventListener("dragover", handleDocumentDragOver);
+      document.removeEventListener("dragleave", handleDocumentDragLeave);
+      document.removeEventListener("drop", handleDocumentDrop);
+    };
+  }, []);
+
+  const handleDragOver: DragEventHandler<HTMLDivElement> = (event) => {
+    event.preventDefault();
+  };
+  const handleDrop: DragEventHandler<HTMLDivElement> = (event) => {
+    event.preventDefault();
+    setDragAndDropState(DragAndDropState.None);
+    const files = event.dataTransfer.files;
+    if (files.length) {
+      const filteredFiles = handleInputFiles({ files, setInputFiles });
+      if (filteredFiles.length) {
+        navigate(ROUTES.player);
+      }
+    }
+  };
 
   return (
     <div
       css={dragAndDropOverlayContainerStyles}
       data-drag-and-drop-active={dragAndDropState !== DragAndDropState.None}
-      onDrag={handleDrag}
+      onDragOver={handleDragOver}
+      onDrop={handleDrop}
       ref={dropZoneRef}
     >
       {(() => {
         switch (dragAndDropState) {
-          case DragAndDropState.FileNotSupported:
-            return <p>File(s) not supported</p>;
-          case DragAndDropState.Processing:
-            return <p>Processing files...</p>;
-          case DragAndDropState.None:
-            return null;
+          case DragAndDropState.Dragging: {
+            return <p>Drop to open</p>;
+          }
           default:
-            if (Array.isArray(dragAndDropState) && dragAndDropState.length) {
-              return <p>Drop to open</p>;
-            }
             // Unexpected state
             return null;
         }

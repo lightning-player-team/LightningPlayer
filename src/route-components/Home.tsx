@@ -3,6 +3,7 @@ import { useSetAtom } from "jotai";
 import { FC, useRef } from "react";
 import { useNavigate } from "react-router";
 import { inputFilesState } from "../shared/atoms/inputFilesState";
+import { handleInputFiles } from "../shared/utils/handleInputFiles";
 import { Button } from "../ui-components/base/button/Button";
 import { FullscreenContainer } from "../ui-components/base/fullscreen-container/FullscreenContainer";
 import {
@@ -28,9 +29,9 @@ export const Home: FC = () => {
     event
   ) => {
     const files = event.target.files;
-    if (files && files.length > 0) {
+    if (files && files.length) {
       console.log("Selected files:", files);
-      setInputFiles(files);
+      handleInputFiles({ files, setInputFiles });
       navigate(ROUTES.player);
     }
   };

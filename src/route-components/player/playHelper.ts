@@ -117,7 +117,7 @@ export const playHelper = async ({
       }
     }
 
-    // console.log(timestamp, nextFrame?.timestamp, timestampInVideo);
+    console.log(timestamp, currentFrame?.timestamp, timestampInVideo);
 
     if (currentFrame.timestamp <= timestampInVideo) {
       draw({

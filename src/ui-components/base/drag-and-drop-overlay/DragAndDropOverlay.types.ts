@@ -1,7 +1,4 @@
 export enum DragAndDropState {
   None,
-  FileNotSupported,
-  Processing,
+  Dragging,
 }
-
-export type DragAndDropResult = string[] | DragAndDropState;

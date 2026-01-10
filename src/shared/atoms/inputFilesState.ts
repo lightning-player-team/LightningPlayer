@@ -1,3 +1,3 @@
 import { atom } from "jotai";
 
-export const inputFilesState = atom<FileList | undefined>(undefined);
+export const inputFilesState = atom<File[]>([]);

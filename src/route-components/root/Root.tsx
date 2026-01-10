@@ -15,7 +15,7 @@ export const Root: FC = () => {
         <GlobalStyles />
         <BackgroundImage />
         {isTauri() && <TitleBar />}
-        {isTauri() && <DragAndDropOverlay />}
+        <DragAndDropOverlay />
         <Outlet />
       </ThemeProvider>
     </main>

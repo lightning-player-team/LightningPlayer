@@ -13,6 +13,7 @@
     "windows": [
       {
         "decorations": false,
+        "dragDropEnabled": false,
         "height": 600,
         "minWidth": 200,
         "width": 800
