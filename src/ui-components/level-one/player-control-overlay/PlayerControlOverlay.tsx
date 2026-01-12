@@ -85,11 +85,61 @@ export const PlayerControlOverlay: FC<PlayerControlOverlayProps> = ({
     // console.log("hovered");
     setIsHovered(true);
   };
-  const handleOnMouseLeaveOverlay = () => {
+  // No way to track out of window mouse events, so treating as mouse up.
+  // TODO: maybe tauri has a way?
+  const handleOnMouseLeaveOverlay: MouseEventHandler<HTMLDivElement> = (
+    event
+  ) => {
     setIsHovered(false);
     if (isSeeking) {
-      console.log("Seeking ended.");
       setIsSeeking(false);
+      const percentage = getProgressPercentageFromEvent(
+        event,
+        progressBarContainerRef
+      );
+      const newProgress = duration * percentage;
+      console.log("Seeking ended.");
+
+      if (resumePlaying) {
+        play(newProgress);
+        setResumePlaying(false);
+      } else {
+        seek(newProgress);
+      }
+    }
+  };
+  const handleOnMouseMoveOverlay: MouseEventHandler<HTMLDivElement> = (
+    event
+  ) => {
+    const percentage = getProgressPercentageFromEvent(
+      event,
+      progressBarContainerRef
+    );
+    const newProgress = duration * percentage;
+    if (isSeeking) {
+      console.log(
+        `Seeking moving at: percentage ${percentage}, progress ${newProgress}`
+      );
+      setProgress(newProgress);
+    }
+  };
+
+  const handleOnMouseUpOverlay: MouseEventHandler<HTMLDivElement> = (event) => {
+    if (isSeeking) {
+      setIsSeeking(false);
+      const percentage = getProgressPercentageFromEvent(
+        event,
+        progressBarContainerRef
+      );
+      const newProgress = duration * percentage;
+      console.log("Seeking ended.");
+
+      if (resumePlaying) {
+        play(newProgress);
+        setResumePlaying(false);
+      } else {
+        seek(newProgress);
+      }
     }
   };
 
@@ -138,41 +188,6 @@ export const PlayerControlOverlay: FC<PlayerControlOverlayProps> = ({
       progressBarContainerRef
     );
     setHoverPercentage(percentage);
-  };
-
-  const handleOnMouseMoveOverlay: MouseEventHandler<HTMLDivElement> = (
-    event
-  ) => {
-    const percentage = getProgressPercentageFromEvent(
-      event,
-      progressBarContainerRef
-    );
-    const newProgress = duration * percentage;
-    if (isSeeking) {
-      console.log(
-        `Seeking moving at: percentage ${percentage}, progress ${newProgress}`
-      );
-      setProgress(newProgress);
-    }
-  };
-
-  const handleOnMouseUpOverlay: MouseEventHandler<HTMLDivElement> = (event) => {
-    if (isSeeking) {
-      setIsSeeking(false);
-      const percentage = getProgressPercentageFromEvent(
-        event,
-        progressBarContainerRef
-      );
-      const newProgress = duration * percentage;
-      console.log("Seeking ended.");
-
-      if (resumePlaying) {
-        play(newProgress);
-        setResumePlaying(false);
-      } else {
-        seek(newProgress);
-      }
-    }
   };
 
   return (

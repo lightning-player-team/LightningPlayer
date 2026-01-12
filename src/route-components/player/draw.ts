@@ -1,30 +1,18 @@
 import { WrappedCanvas } from "mediabunny";
-import { RefObject } from "react";
 import { Dimensions } from "../../shared/types/dimensions";
 
 /**
  * Draws the WrappedCanvas to the target canvas context.
  */
 export const draw = ({
-  canvasRef,
+  ctx,
   screenDimensions,
   wrappedCanvas,
 }: {
-  canvasRef: RefObject<HTMLCanvasElement | null>;
-  screenDimensions: Dimensions | null;
+  ctx: CanvasRenderingContext2D;
+  screenDimensions: Dimensions;
   wrappedCanvas: WrappedCanvas;
 }) => {
-  const ctx = canvasRef.current?.getContext("2d");
-  if (!ctx) {
-    console.error("Error drawing: no 2D context.");
-    return;
-  }
-
-  if (!screenDimensions) {
-    console.error("Error drawing: no screen dimensions.");
-    return;
-  }
-
   const { canvas } = wrappedCanvas;
   const heightScale = screenDimensions.height / canvas.height;
   const widthScale = screenDimensions.width / canvas.width;

@@ -1,11 +1,11 @@
 import { useAtomValue } from "jotai";
 import {
   ALL_FORMATS,
+  AudioBufferSink,
   BlobSource,
   CanvasSink,
   Input,
-  InputAudioTrack,
-  InputVideoTrack,
+  WrappedAudioBuffer,
   WrappedCanvas,
 } from "mediabunny";
 import { FC, useCallback, useEffect, useRef, useState } from "react";
@@ -13,7 +13,6 @@ import { inputFilesState } from "../../shared/atoms/inputFilesState";
 import { titleBarPinnedState } from "../../shared/atoms/titleBarPinnedState";
 import { Dimensions } from "../../shared/types/dimensions";
 import { debounce } from "../../shared/utils/debounce";
-import { isTruthy } from "../../shared/utils/isTruthy";
 import { FullscreenContainer } from "../../ui-components/base/fullscreen-container/FullscreenContainer";
 import { PlayerControlOverlay } from "../../ui-components/level-one/player-control-overlay/PlayerControlOverlay";
 import { draw } from "./draw";
@@ -25,26 +24,24 @@ export const Player: FC = () => {
 
   // Progress in seconds.
   const [progress, setProgress] = useState(0);
-  // Avoids relying on progess in the resize handler.
-  const [_audioTracks, setAudioTracks] = useState<InputAudioTrack[]>([]);
-  const [_videoTracks, setVideoTracks] = useState<InputVideoTrack[]>([]);
+  const [currentAudioSink, setCurrentAudioSink] = useState<AudioBufferSink>();
   const [currentVideoSink, setCurrentVideoSink] = useState<CanvasSink>();
   const [duration, setDuration] = useState<number>(0);
-  // const [audioContext, setAudioContext] = useState<AudioContext>();
-  const [_currentAudioTrack, setCurrentAudioTrack] =
-    useState<InputAudioTrack>();
+
+  // Audio refs for Web Audio API playback.
+  const audioContextRef = useRef<AudioContext>(undefined);
+  const audioIteratorRef =
+    useRef<AsyncGenerator<WrappedAudioBuffer, void, unknown>>(undefined);
+  const gainNodeRef = useRef<GainNode>(undefined);
 
   // Controls the playback loop and allows pausing.
   const playRAFRef = useRef<number>(null);
-  // const [playRAF, setPlayRAF] = useState<boolean>(false);
   // Used by PlayerControlOverlay to toggle play/pause button.
   const [isPlaying, setIsPlaying] = useState(false);
 
-  // const audioContextStartTimeRef = useRef<number>(undefined);
-
   const isTitleBarPinned = useAtomValue(titleBarPinnedState);
   const fullscreenContainerRef = useRef<HTMLDivElement>(null);
-  const screenDimensionsRef = useRef<Dimensions>(null);
+  const screenDimensionsRef = useRef<Dimensions>(undefined);
 
   // Used by the play loop to keep track of the frame to render.
   const currentFrameRef = useRef<WrappedCanvas | undefined>(undefined);
@@ -59,8 +56,17 @@ export const Player: FC = () => {
    */
   const seek = useCallback(
     async (time: number) => {
+      const ctx = canvasRef.current?.getContext("2d");
+      if (!ctx) {
+        console.error("Error seeking: no canvas context.");
+        return;
+      }
+      if (screenDimensionsRef.current === undefined) {
+        console.error("Error seeking: no screen dimensions.");
+        return;
+      }
       await seekHelper({
-        canvasRef,
+        ctx,
         currentFrameRef,
         currentVideoSink,
         screenDimensionsRef,
@@ -75,12 +81,26 @@ export const Player: FC = () => {
    */
   const play = useCallback(
     async (time: number) => {
+      const ctx = canvasRef.current?.getContext("2d");
+      if (!ctx) {
+        console.error("Error playing: no canvas context.");
+        return;
+      }
+      if (!audioContextRef.current) {
+        console.error("Error playing: no audio context.");
+        return;
+      }
+
       await playHelper({
+        audioContext: audioContextRef.current,
+        audioBufferIteratorRef: audioIteratorRef,
         canvasIteratorRef,
-        canvasRef,
+        currentAudioSink,
         currentFrameRef,
         currentVideoSink,
+        ctx,
         duration,
+        gainNode: gainNodeRef.current,
         playRAFRef,
         screenDimensionsRef,
         setIsPlaying,
@@ -88,16 +108,23 @@ export const Player: FC = () => {
         time,
       });
     },
-    [currentVideoSink, duration]
+    [currentAudioSink, currentVideoSink, duration]
   );
 
-  const pause = () => {
-    console.log("pause.");
+  const pauseAndCleanUp = () => {
     if (playRAFRef.current) {
       cancelAnimationFrame(playRAFRef.current);
     }
-    // Dispose iterator to release VideoSample resources.
+    // Dispose iterators to release resources.
+    audioIteratorRef.current?.return();
     canvasIteratorRef.current?.return();
+    // Suspend audio context to stop scheduled audio.
+    audioContextRef.current?.suspend();
+  };
+
+  const pause = () => {
+    console.log("pause.");
+    pauseAndCleanUp();
     setIsPlaying(false);
   };
 
@@ -117,10 +144,15 @@ export const Player: FC = () => {
       canvasRef.current.width = dimensions.width;
       canvasRef.current.height = dimensions.height;
 
+      const ctx = canvasRef.current.getContext("2d");
+      if (!ctx) {
+        console.error("Error updating canvas dimensions: no canvas context.");
+        return;
+      }
       if (currentFrameRef.current) {
         // Redraw immediately after dimension change.
         draw({
-          canvasRef,
+          ctx,
           screenDimensions: screenDimensionsRef.current,
           wrappedCanvas: currentFrameRef.current,
         });
@@ -151,14 +183,8 @@ export const Player: FC = () => {
 
   // Playback cleanup on unmount only.
   useEffect(() => {
-    const canvasIterator = canvasIteratorRef.current;
     return () => {
-      // Dispose iterator to release VideoSample resources.
-      canvasIterator?.return();
-      if (playRAFRef.current) {
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-        cancelAnimationFrame(playRAFRef.current);
-      }
+      pauseAndCleanUp();
     };
   }, []);
 
@@ -179,33 +205,39 @@ export const Player: FC = () => {
         source: new BlobSource(files[0]),
       });
 
-      const allVideoTracks = await input.getVideoTracks();
-      const videoTracks = (
-        await Promise.all(
-          allVideoTracks.map(async (videoTrack) => {
-            const decodable = await videoTrack.canDecode();
-            return decodable ? videoTrack : undefined;
-          })
-        )
-      ).filter(isTruthy);
+      const videoTracks = await input.getVideoTracks();
+      const videoSink = new CanvasSink(videoTracks[0]);
+      const duration = await videoTracks[0].computeDuration();
 
       const audioTracks = await input.getAudioTracks();
-
-      const duration = await videoTracks[0].computeDuration();
-      const videoSink = new CanvasSink(videoTracks[0]);
       const currentAudioTrack = audioTracks[0];
-      const audioContext = new AudioContext({
+
+      // Only create audio infrastructure if there's an audio track.
+      const audioContext: AudioContext = new AudioContext({
         sampleRate: currentAudioTrack?.sampleRate,
       });
-      const gainNode = audioContext.createGain();
-      gainNode.connect(audioContext.destination);
+      console.log(`audioContext's baseLatency: ${audioContext.baseLatency}`);
+
+      let audioSink: AudioBufferSink | undefined;
+      let gainNode: GainNode | undefined;
+      if (currentAudioTrack) {
+        audioSink = new AudioBufferSink(currentAudioTrack);
+
+        if (audioContextRef.current) {
+          audioContextRef.current.close();
+        }
+        gainNode = audioContext.createGain();
+        gainNode.connect(audioContext.destination);
+
+        // Store in refs (not reactive, for playback use).
+        audioContextRef.current = audioContext;
+        gainNodeRef.current = gainNode;
+      }
 
       if (!unmounted) {
-        setAudioTracks(audioTracks);
-        setCurrentAudioTrack(currentAudioTrack);
+        setCurrentAudioSink(audioSink);
         setCurrentVideoSink(videoSink);
         setDuration(duration);
-        setVideoTracks(videoTracks);
       }
     };
 

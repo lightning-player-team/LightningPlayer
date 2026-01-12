@@ -6,23 +6,23 @@ import { draw } from "./draw";
 /**
  * Seek to time in seconds.
  *
- * @param canvasRef - Ref to the HTML canvas element for rendering
+ * @param ctx - Canvas 2D rendering context
  * @param currentFrameRef - Ref to the current frame awaiting render
  * @param currentVideoSink - The CanvasSink instance providing decoded frames
  * @param screenDimensionsRef - Ref to current screen dimensions for scaling
  * @param time - Seek time in seconds
  */
 export const seekHelper = async ({
-  canvasRef,
+  ctx,
   currentFrameRef,
   currentVideoSink,
   screenDimensionsRef,
   time,
 }: {
-  canvasRef: RefObject<HTMLCanvasElement | null>;
+  ctx: CanvasRenderingContext2D;
   currentFrameRef: RefObject<WrappedCanvas | undefined>;
   currentVideoSink: CanvasSink | undefined;
-  screenDimensionsRef: RefObject<Dimensions | null>;
+  screenDimensionsRef: RefObject<Dimensions | undefined>;
   time: number;
 }): Promise<void> => {
   console.log(`seek: started for ${time}.`);
@@ -36,11 +36,16 @@ export const seekHelper = async ({
     console.error("Error seeking: getCanvas failed.");
     return;
   }
+  const screenDimensions = screenDimensionsRef.current;
+  if (!screenDimensions) {
+    console.error("Error seeking: no screen dimensions.");
+    return;
+  }
 
   currentFrameRef.current = wrappedCanvas;
   draw({
-    canvasRef,
-    screenDimensions: screenDimensionsRef.current,
+    ctx,
+    screenDimensions,
     wrappedCanvas,
   });
 };

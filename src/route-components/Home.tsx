@@ -19,8 +19,6 @@ export const Home: FC = () => {
   const setInputFiles = useSetAtom(inputFilesState);
   const navigate = useNavigate();
 
-  // TODO LP-69: - remove tauri fs, dialog?
-  // TODO LP-35: - redo drag and drop
   const handleOnClickOpenFile = async () => {
     openFileInputRef.current?.click();
   };

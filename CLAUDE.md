@@ -61,6 +61,12 @@ UI components in `src/ui-components/`:
 
 - When writing functions, if we need multiple parameters, put the parameters in a single object and type it inline in the function signature.
 
+- A file containing only one function should use the exact same name as the function. A file should define at most one React component. A file containing a react component should use the exact same name as the component.
+
+- When initializing a react ref, use undefined if the ref is not pointing to an HTML element.
+
+- Only pass refs to a function when the function updates the ref (i.e. ref.current = ...) otherwise pass the ref.current directly.
+
 - When debugging or making changes, keep debug comments such as `console.log` or at least comment them out instead of removing them.
 
 ## Implementation Notes
