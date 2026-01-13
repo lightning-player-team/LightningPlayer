@@ -32,6 +32,7 @@ export const Player: FC = () => {
   const audioContextRef = useRef<AudioContext>(undefined);
   const audioIteratorRef =
     useRef<AsyncGenerator<WrappedAudioBuffer, void, unknown>>(undefined);
+  const queuedAudioNodesRef = useRef<Set<AudioBufferSourceNode>>(new Set());
   const gainNodeRef = useRef<GainNode>(undefined);
 
   // Controls the playback loop and allows pausing.
@@ -41,6 +42,7 @@ export const Player: FC = () => {
 
   const isTitleBarPinned = useAtomValue(titleBarPinnedState);
   const fullscreenContainerRef = useRef<HTMLDivElement>(null);
+  // Used for drawing and updated by resize handler.
   const screenDimensionsRef = useRef<Dimensions>(undefined);
 
   // Used by the play loop to keep track of the frame to render.
@@ -102,6 +104,7 @@ export const Player: FC = () => {
         duration,
         gainNode: gainNodeRef.current,
         playRAFRef,
+        queuedAudioNodesRef,
         screenDimensionsRef,
         setIsPlaying,
         setProgress,
@@ -115,6 +118,11 @@ export const Player: FC = () => {
     if (playRAFRef.current) {
       cancelAnimationFrame(playRAFRef.current);
     }
+    // Stop all audio nodes that were already queued to play
+    for (const node of queuedAudioNodesRef.current) {
+      node.stop();
+    }
+    queuedAudioNodesRef.current.clear();
     // Dispose iterators to release resources.
     audioIteratorRef.current?.return();
     canvasIteratorRef.current?.return();

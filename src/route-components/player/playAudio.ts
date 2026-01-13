@@ -23,6 +23,7 @@ export const playAudio = async ({
   audioContextStartTime,
   currentAudioSink,
   gainNode,
+  queuedAudioNodesRef,
   time,
 }: {
   audioBufferIteratorRef: RefObject<
@@ -32,6 +33,7 @@ export const playAudio = async ({
   audioContextStartTime: number;
   currentAudioSink: AudioBufferSink;
   gainNode: GainNode;
+  queuedAudioNodesRef: RefObject<Set<AudioBufferSourceNode>>;
   time: number;
 }): Promise<void> => {
   // Dispose previous iterators before creating new ones.
@@ -53,17 +55,19 @@ export const playAudio = async ({
       audioContext.currentTime - audioContextStartTime + time;
     console.log(`playAudio: ${timestamp}, ${currentTimestamp}`);
 
+    // Two cases: Either, the audio starts in the future or in the past
     if (timestamp >= currentTimestamp) {
-      // Buffer is in the future, schedule it.
+      // If the audio starts in the future, easy, we just schedule it
       node.start(audioContextStartTime + timestamp - time);
     } else {
-      // Already past start time, play from offset.
-      const offset = currentTimestamp - timestamp;
-      if (offset < buffer.duration) {
-        node.start(audioContext.currentTime, offset);
-      }
-      // If offset >= buffer.duration, skip this buffer entirely.
+      // If it starts in the past, then let's only play the audible section that remains from here on out
+      node.start(audioContext.currentTime, currentTimestamp - timestamp);
     }
+
+    queuedAudioNodesRef.current.add(node);
+    node.onended = () => {
+      queuedAudioNodesRef.current.delete(node);
+    };
 
     // Throttle if too far ahead (>1 second buffered).
     if (timestamp - currentTimestamp >= 1) {

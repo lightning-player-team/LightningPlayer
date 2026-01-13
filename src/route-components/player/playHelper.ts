@@ -46,6 +46,7 @@ export const playHelper = async ({
   duration,
   gainNode,
   playRAFRef,
+  queuedAudioNodesRef,
   screenDimensionsRef,
   setIsPlaying,
   setProgress,
@@ -65,6 +66,7 @@ export const playHelper = async ({
   duration: number;
   gainNode?: GainNode;
   playRAFRef: RefObject<number | null>;
+  queuedAudioNodesRef: RefObject<Set<AudioBufferSourceNode>>;
   screenDimensionsRef: RefObject<Dimensions | undefined>;
   setIsPlaying: Dispatch<SetStateAction<boolean>>;
   setProgress: Dispatch<SetStateAction<number>>;
@@ -99,6 +101,7 @@ export const playHelper = async ({
       audioContextStartTime,
       currentAudioSink,
       gainNode,
+      queuedAudioNodesRef,
       time,
     });
   }
