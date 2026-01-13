@@ -77,13 +77,22 @@ Provides Emotion ThemeProvider, global styles, and Tauri-specific components (Ti
 
 ### Player (`src/route-components/player/Player.tsx`)
 
-Uses mediabunny for video decoding:
+Uses mediabunny for video decoding and Web Audio API for audio playback:
 
 1. Creates `Input` from file blob with `BlobSource`
 2. Gets video/audio tracks via `getVideoTracks()` / `getAudioTracks()`
-3. Creates `VideoSampleSink` for frame iteration
-4. Renders frames to canvas via `requestAnimationFrame` loop
-5. Manual frame timing and cleanup with `VideoSample.close()`
+3. Creates `CanvasSink` for video frames and `AudioBufferSink` for audio buffers
+4. Audio: Schedules `AudioBufferSourceNode` instances via `playAudio.ts`
+5. Video: Renders frames to canvas via `requestAnimationFrame` loop; each animation frame we decide whether to render a new video frame or request the next frame by looking at `audioContext.currentTime` for A/V sync.
+
+**Seeking behavior:**
+
+- Paused seek: Calls `seekHelper` to draw a single frame at the new position without starting playback
+- Playing seek: Pauses playback first (stops all queued audio nodes via `queuedAudioNodesRef`), then resumes at the new position
+
+**Audio cleanup:** Scheduled audio nodes are tracked in `queuedAudioNodesRef`. On pause/seek, all tracked nodes are stopped via `node.stop()` to prevent old audio from playing. Nodes are only added to the Set after `node.start()` is called. `audioIteratorRef.current?.return();` and `audioContextRef.current?.suspend();` are called to deallocate resources.
+
+**Video cleanup:** `cancelAnimationFrame(playRAFRef.current);` is used to cancel the frame rendering requestAnimationFrame callback, effectively stops playback. `canvasIteratorRef.current?.return();` is called to deallocate resources.
 
 ## Critical Configuration
 
