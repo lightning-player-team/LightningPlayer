@@ -50,6 +50,7 @@ export const progressBarContainerStyles = css({
 export const progressBarCurrentStyles = (theme: Theme) =>
   css({
     backgroundColor: theme.colors.playerControls.progressBar.thumb,
+    borderRadius: progressBarTrackHeight / 2,
     height: progressBarTrackHeight,
     position: "absolute",
     transition: `transform ${transitionDuration} ${transitionTimingFunction}`,
@@ -80,10 +81,11 @@ export const progressbarThumbStyles = (theme: Theme) =>
 export const progressBarTrackStyles = (theme: Theme) =>
   css({
     backgroundColor: theme.colors.playerControls.progressBar.background,
+    borderRadius: progressBarTrackHeight / 2,
     height: progressBarTrackHeight,
     position: "absolute",
-    width: "100%",
     transition: `transform ${transitionDuration} ${transitionTimingFunction}`,
+    width: "100%",
 
     "[data-is-progress-bar-hovered=true] &": {
       transform: `scaleY(${
@@ -95,6 +97,7 @@ export const progressBarTrackStyles = (theme: Theme) =>
 export const progressBarTrackFillStyles = (theme: Theme) =>
   css({
     backgroundColor: theme.colors.playerControls.progressBar.hoverFill,
+    borderRadius: progressBarTrackHeight / 2,
     height: progressBarTrackHeight,
     position: "absolute",
   });
@@ -102,7 +105,7 @@ export const progressBarTrackFillStyles = (theme: Theme) =>
 export const buttonContainerStyles = css({
   alignItems: "center",
   display: "grid",
-  gridTemplateColumns: "auto 1fr auto",
+  gridTemplateColumns: "1fr auto 1fr",
   marginBottom: 6,
   width: "100%",
 });
@@ -111,12 +114,10 @@ export const leftContainerStyles = css({
   justifySelf: "start",
 });
 
-export const centerContainerStyles = css({
-  justifySelf: "center",
-});
+export const centerContainerStyles = css({});
 
 export const rightContainerStyles = css({
-  justifyContent: "end",
+  justifySelf: "end",
 });
 
 export const playButtonStyles = (theme: Theme) =>

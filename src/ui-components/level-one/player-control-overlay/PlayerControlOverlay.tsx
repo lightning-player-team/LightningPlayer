@@ -8,6 +8,7 @@ import {
 } from "react";
 import PauseIcon from "../../../assets/svgs/PauseIcon";
 import PlayIcon from "../../../assets/svgs/PlayIcon";
+import { VolumeControl } from "../../base/volume-control/VolumeControl";
 import {
   bottomControlsContainerStyles,
   buttonContainerStyles,
@@ -29,7 +30,10 @@ export interface PlayerControlOverlayProps {
    * Duration in seconds.
    */
   duration: number;
+  isMuted: boolean;
   isPlaying: boolean;
+  onMuteToggle: () => void;
+  onVolumeChange: (volume: number) => void;
   pause: () => void;
   /**
    * Time in seconds.
@@ -47,33 +51,35 @@ export interface PlayerControlOverlayProps {
    * Set progress in seconds.
    */
   setProgress: Dispatch<SetStateAction<number>>;
+  volume: number;
 }
 
 export const PlayerControlOverlay: FC<PlayerControlOverlayProps> = ({
   duration,
+  isMuted,
   isPlaying,
+  onMuteToggle,
+  onVolumeChange,
   pause,
   play,
   progress,
   seek,
   setProgress,
+  volume,
 }) => {
   const [isHovered, setIsHovered] = useState(false);
-
-  // Only set when the user clicks on the progress bar while the video is playing.
-  // The video is first paused, and resumes when the user lifts the click.
-  const [resumePlaying, setResumePlaying] = useState(false);
-  const [isProgressBarHovered, setIsProgressBarHovered] = useState(false);
-  // HoverPercentage from 0 to 1. Undefined means not seeking.
+  // HoverPercentage from 0 to 1. Undefined means not hovering.
   const [hoverPercentage, setHoverPercentage] = useState<number | undefined>(
     undefined
   );
-  const [isSeeking, setIsSeeking] = useState(false);
+  const [isProgressBarHovered, setIsProgressBarHovered] = useState(false);
+  const [isVolumePinned, setIsVolumePinned] = useState(false);
   const progressBarContainerRef = useRef<HTMLDivElement>(null);
   // Percentage from 0 to 1.
   const percentage = progress / duration;
 
   const handleOnClickPlayButton = () => {
+    setIsVolumePinned(false);
     if (!isPlaying) {
       play(progress);
     } else {
@@ -85,108 +91,83 @@ export const PlayerControlOverlay: FC<PlayerControlOverlayProps> = ({
     // console.log("hovered");
     setIsHovered(true);
   };
-  // No way to track out of window mouse events, so treating as mouse up.
-  // TODO: maybe tauri has a way?
-  const handleOnMouseLeaveOverlay: MouseEventHandler<HTMLDivElement> = (
-    event
-  ) => {
+
+  const handleOnMouseLeaveOverlay = () => {
     setIsHovered(false);
-    if (isSeeking) {
-      setIsSeeking(false);
-      const percentage = getProgressPercentageFromEvent(
-        event,
-        progressBarContainerRef
-      );
-      const newProgress = duration * percentage;
-      console.log("Seeking ended.");
-
-      if (resumePlaying) {
-        play(newProgress);
-        setResumePlaying(false);
-      } else {
-        seek(newProgress);
-      }
-    }
-  };
-  const handleOnMouseMoveOverlay: MouseEventHandler<HTMLDivElement> = (
-    event
-  ) => {
-    const percentage = getProgressPercentageFromEvent(
-      event,
-      progressBarContainerRef
-    );
-    const newProgress = duration * percentage;
-    if (isSeeking) {
-      console.log(
-        `Seeking moving at: percentage ${percentage}, progress ${newProgress}`
-      );
-      setProgress(newProgress);
-    }
-  };
-
-  const handleOnMouseUpOverlay: MouseEventHandler<HTMLDivElement> = (event) => {
-    if (isSeeking) {
-      setIsSeeking(false);
-      const percentage = getProgressPercentageFromEvent(
-        event,
-        progressBarContainerRef
-      );
-      const newProgress = duration * percentage;
-      console.log("Seeking ended.");
-
-      if (resumePlaying) {
-        play(newProgress);
-        setResumePlaying(false);
-      } else {
-        seek(newProgress);
-      }
-    }
   };
 
   const handleOnMouseEnterProgressBar = () => {
     setIsProgressBarHovered(true);
   };
+
   const handleOnMouseLeaveProgressBar = () => {
     setIsProgressBarHovered(false);
     setHoverPercentage(undefined);
   };
 
-  // Track mouseDown sets isSeeking to true and starts moving the progress bar.
-  // The user can move outside of the track as well, so the corresponding
-  // move and up handlers are the overlay's.
   const handleOnMouseDownProgressBar: MouseEventHandler<HTMLDivElement> = (
     event
   ) => {
-    // Prevent drag and drop.
-    if (event.button === 0) {
-      event.preventDefault();
-      setIsSeeking(true);
-      const percentage = getProgressPercentageFromEvent(
-        event,
-        progressBarContainerRef
-      );
+    if (event.button !== 0) return;
+    event.preventDefault();
+    setIsVolumePinned(false);
 
+    const percentage = getProgressPercentageFromEvent({
+      event,
+      progressBarContainerRef,
+    });
+    const newProgress = duration * percentage;
+    console.log(
+      `Seeking started at: percentage ${percentage}, progress ${newProgress}`
+    );
+    setProgress(newProgress);
+
+    if (isPlaying) {
+      pause();
+    }
+
+    // Drag handlers.
+    const handleMouseMove = (e: MouseEvent) => {
+      const percentage = getProgressPercentageFromEvent({
+        event: e,
+        progressBarContainerRef,
+      });
       const newProgress = duration * percentage;
       console.log(
-        `Seeking started at: percentage ${percentage}, progress ${newProgress}`
+        `Seeking moving at: percentage ${percentage}, progress ${newProgress}`
       );
-
       setProgress(newProgress);
-      if (isPlaying) {
-        pause();
+    };
 
-        setResumePlaying(true);
+    const handleMouseUp = (e: MouseEvent) => {
+      const percentage = getProgressPercentageFromEvent({
+        event: e,
+        progressBarContainerRef,
+      });
+      const newProgress = duration * percentage;
+      console.log("Seeking ended.");
+
+      if (isPlaying) {
+        play(newProgress);
+      } else {
+        seek(newProgress);
       }
-    }
+
+      document.removeEventListener("mousemove", handleMouseMove);
+      document.removeEventListener("mouseup", handleMouseUp);
+    };
+
+    document.addEventListener("mousemove", handleMouseMove);
+    document.addEventListener("mouseup", handleMouseUp);
   };
 
   const handleOnMouseMoveProgressBar: MouseEventHandler<HTMLDivElement> = (
     event
   ) => {
-    const percentage = getProgressPercentageFromEvent(
+    const percentage = getProgressPercentageFromEvent({
       event,
-      progressBarContainerRef
-    );
+      progressBarContainerRef,
+    });
     setHoverPercentage(percentage);
   };
 
@@ -196,8 +177,6 @@ export const PlayerControlOverlay: FC<PlayerControlOverlayProps> = ({
       data-is-hovered={isHovered}
       onMouseEnter={handleOnMouseEnterOverlay}
       onMouseLeave={handleOnMouseLeaveOverlay}
-      onMouseMove={handleOnMouseMoveOverlay}
-      onMouseUp={handleOnMouseUpOverlay}
     >
       <div css={bottomControlsContainerStyles}>
         {/* ProgressBar container */}
@@ -238,7 +217,16 @@ export const PlayerControlOverlay: FC<PlayerControlOverlayProps> = ({
           />
         </div>
         <div css={buttonContainerStyles}>
-          <div css={leftContainerStyles}>something left</div>
+          <div css={leftContainerStyles}>
+            <VolumeControl
+              isMuted={isMuted}
+              isPinned={isVolumePinned}
+              onMuteToggle={onMuteToggle}
+              onVolumeChange={onVolumeChange}
+              setIsPinned={setIsVolumePinned}
+              volume={volume}
+            />
+          </div>
           <div css={centerContainerStyles}>
             <button
               aria-label="Play"
@@ -248,7 +236,7 @@ export const PlayerControlOverlay: FC<PlayerControlOverlayProps> = ({
               {isPlaying ? <PauseIcon /> : <PlayIcon />}
             </button>
           </div>
-          <div css={rightContainerStyles}>something right</div>
+          <div css={rightContainerStyles} />
         </div>
       </div>
     </div>

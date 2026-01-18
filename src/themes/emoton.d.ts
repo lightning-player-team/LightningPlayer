@@ -19,6 +19,11 @@ declare module "@emotion/react" {
           hoverFill: string;
           thumb: string;
         };
+        volumeControl: {
+          background: string;
+          fill: string;
+          thumb: string;
+        };
       };
       root: {
         background: string;

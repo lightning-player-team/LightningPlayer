@@ -15,6 +15,11 @@
         "background": "rgba(255, 255, 255, 0.1)",
         "hoverFill": "rgba(255, 255, 255, 0.7)",
         "thumb": "rgb(255, 0, 51)"
+      },
+      "volumeControl": {
+        "background": "rgba(255, 255, 255, 0.25)",
+        "fill": "rgb(238, 238, 238)",
+        "thumb": "rgb(238, 238, 238)"
       }
     },
     "root": {

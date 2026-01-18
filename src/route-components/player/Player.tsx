@@ -1,4 +1,4 @@
-import { useAtomValue } from "jotai";
+import { useAtom, useAtomValue } from "jotai";
 import {
   ALL_FORMATS,
   AudioBufferSink,
@@ -10,7 +10,9 @@ import {
 } from "mediabunny";
 import { FC, useCallback, useEffect, useRef, useState } from "react";
 import { inputFilesState } from "../../shared/atoms/inputFilesState";
+import { isMutedState } from "../../shared/atoms/isMutedState";
 import { titleBarPinnedState } from "../../shared/atoms/titleBarPinnedState";
+import { volumeState } from "../../shared/atoms/volumeState";
 import { Dimensions } from "../../shared/types/dimensions";
 import { debounce } from "../../shared/utils/debounce";
 import { FullscreenContainer } from "../../ui-components/base/fullscreen-container/FullscreenContainer";
@@ -21,6 +23,8 @@ import { seekHelper } from "./seekHelper";
 
 export const Player: FC = () => {
   const files = useAtomValue(inputFilesState);
+  const [isMuted, setIsMuted] = useAtom(isMutedState);
+  const [volume, setVolume] = useAtom(volumeState);
 
   // Progress in seconds.
   const [progress, setProgress] = useState(0);
@@ -220,7 +224,7 @@ export const Player: FC = () => {
       const audioTracks = await input.getAudioTracks();
       const currentAudioTrack = audioTracks[0];
 
-      // Only create audio infrastructure if there's an audio track.
+      // Always create audio infrastructure even if there isn't an audio track.
       const audioContext: AudioContext = new AudioContext({
         sampleRate: currentAudioTrack?.sampleRate,
       });
@@ -260,6 +264,22 @@ export const Player: FC = () => {
     };
   }, [files]);
 
+  // Sync gain node with volume/mute state.
+  // currentAudioSink is included to re-run when audio is (re-)initialized.
+  useEffect(() => {
+    if (gainNodeRef.current) {
+      gainNodeRef.current.gain.value = isMuted ? 0 : volume / 100;
+    }
+  }, [currentAudioSink, isMuted, volume]);
+
+  const handleMuteToggle = () => {
+    setIsMuted(!isMuted);
+  };
+
+  const handleVolumeChange = (newVolume: number) => {
+    setVolume(newVolume);
+  };
+
   if (!files) {
     return;
   }
@@ -268,12 +288,16 @@ export const Player: FC = () => {
     <FullscreenContainer ref={fullscreenContainerRef}>
       <PlayerControlOverlay
         duration={duration}
+        isMuted={isMuted}
         isPlaying={isPlaying}
+        onMuteToggle={handleMuteToggle}
+        onVolumeChange={handleVolumeChange}
         pause={pause}
         play={play}
         progress={progress}
         seek={seek}
         setProgress={setProgress}
+        volume={volume}
       />
 
       <canvas ref={canvasRef} />
