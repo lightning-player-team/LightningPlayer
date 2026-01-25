@@ -19,6 +19,12 @@ declare module "@emotion/react" {
           hoverFill: string;
           thumb: string;
         };
+        previewThumbnail: {
+          background: string;
+          border: string;
+          timestampBackground: string;
+          timestampColor: string;
+        };
         volumeControl: {
           background: string;
           fill: string;

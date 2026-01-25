@@ -99,7 +99,13 @@ export const progressBarTrackFillStyles = (theme: Theme) =>
     backgroundColor: theme.colors.playerControls.progressBar.hoverFill,
     borderRadius: progressBarTrackHeight / 2,
     height: progressBarTrackHeight,
+    opacity: 0,
     position: "absolute",
+    transition: `opacity ${transitionDuration} ${transitionTimingFunction}`,
+
+    "[data-is-progress-bar-hovered=true] &": {
+      opacity: 1,
+    },
   });
 
 export const buttonContainerStyles = css({
@@ -129,3 +135,17 @@ export const playButtonStyles = (theme: Theme) =>
     lineHeight: 0,
     padding: 0,
   });
+
+export const previewThumbnailWrapperStyles = css({
+  bottom: "100%",
+  marginBottom: 8,
+  opacity: 0,
+  pointerEvents: "none",
+  position: "absolute",
+  transform: "translateX(-50%)",
+  transition: `opacity ${transitionDuration} ${transitionTimingFunction}`,
+
+  "[data-is-progress-bar-hovered=true] &": {
+    opacity: 1,
+  },
+});

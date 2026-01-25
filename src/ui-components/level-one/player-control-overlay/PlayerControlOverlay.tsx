@@ -3,12 +3,16 @@ import {
   FC,
   MouseEventHandler,
   SetStateAction,
+  useEffect,
   useRef,
   useState,
 } from "react";
 import PauseIcon from "../../../assets/svgs/PauseIcon";
 import PlayIcon from "../../../assets/svgs/PlayIcon";
+import { formatTimestamp } from "../../../shared/utils/formatTimestamp";
+import { PreviewThumbnail } from "../../base/preview-thumbnail/PreviewThumbnail";
 import { VolumeControl } from "../../base/volume-control/VolumeControl";
+import { getProgressPercentageFromEvent } from "./getProgressPercentageFromEvent";
 import {
   bottomControlsContainerStyles,
   buttonContainerStyles,
@@ -16,6 +20,7 @@ import {
   leftContainerStyles,
   playButtonStyles,
   playerControlOverlayContainerStyles,
+  previewThumbnailWrapperStyles,
   progressBarContainerStyles,
   progressBarCurrentStyles,
   progressbarThumbStyles,
@@ -23,13 +28,16 @@ import {
   progressBarTrackStyles,
   rightContainerStyles,
 } from "./PlayerControlOverlay.styles";
-import { getProgressPercentageFromEvent } from "./getProgressPercentageFromEvent";
 
 export interface PlayerControlOverlayProps {
   /**
    * Duration in seconds.
    */
   duration: number;
+  /**
+   * Fetch a thumbnail for the given timestamp.
+   */
+  getThumbnail: (timestamp: number) => Promise<string | undefined>;
   isMuted: boolean;
   isPlaying: boolean;
   onMuteToggle: () => void;
@@ -56,6 +64,7 @@ export interface PlayerControlOverlayProps {
 
 export const PlayerControlOverlay: FC<PlayerControlOverlayProps> = ({
   duration,
+  getThumbnail,
   isMuted,
   isPlaying,
   onMuteToggle,
@@ -67,16 +76,46 @@ export const PlayerControlOverlay: FC<PlayerControlOverlayProps> = ({
   setProgress,
   volume,
 }) => {
+  const [containerWidth, setContainerWidth] = useState(0);
   const [isHovered, setIsHovered] = useState(false);
   // HoverPercentage from 0 to 1. Undefined means not hovering.
   const [hoverPercentage, setHoverPercentage] = useState<number | undefined>(
-    undefined
+    undefined,
   );
   const [isProgressBarHovered, setIsProgressBarHovered] = useState(false);
   const [isVolumePinned, setIsVolumePinned] = useState(false);
   const progressBarContainerRef = useRef<HTMLDivElement>(null);
   // Percentage from 0 to 1.
   const percentage = progress / duration;
+
+  // Track container width for clamping thumbnail position.
+  useEffect(() => {
+    const container = progressBarContainerRef.current;
+    if (!container) return;
+
+    const resizeObserver = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        setContainerWidth(entry.contentRect.width);
+      }
+    });
+    resizeObserver.observe(container);
+
+    return () => {
+      resizeObserver.disconnect();
+    };
+  }, []);
+
+  // Calculate thumbnail position.
+  const thumbnailWidth = 160;
+  const halfThumbnailWidth = thumbnailWidth / 2;
+  const currentHoverPercentage = hoverPercentage ?? 0;
+  const hoverTime = currentHoverPercentage * duration;
+  const hoverTimestamp = Math.floor(hoverTime);
+  const rawPosition = currentHoverPercentage * containerWidth;
+  const clampedPosition = Math.max(
+    halfThumbnailWidth,
+    Math.min(containerWidth - halfThumbnailWidth, rawPosition),
+  );
 
   const handleOnClickPlayButton = () => {
     setIsVolumePinned(false);
@@ -102,11 +141,11 @@ export const PlayerControlOverlay: FC<PlayerControlOverlayProps> = ({
 
   const handleOnMouseLeaveProgressBar = () => {
     setIsProgressBarHovered(false);
-    setHoverPercentage(undefined);
+    // Keep hoverPercentage value so thumbnail stays in place during fade-out.
   };
 
   const handleOnMouseDownProgressBar: MouseEventHandler<HTMLDivElement> = (
-    event
+    event,
   ) => {
     if (event.button !== 0) return;
     event.preventDefault();
@@ -118,7 +157,7 @@ export const PlayerControlOverlay: FC<PlayerControlOverlayProps> = ({
     });
     const newProgress = duration * percentage;
     console.log(
-      `Seeking started at: percentage ${percentage}, progress ${newProgress}`
+      `Seeking started at: percentage ${percentage}, progress ${newProgress}`,
     );
     setProgress(newProgress);
 
@@ -134,7 +173,7 @@ export const PlayerControlOverlay: FC<PlayerControlOverlayProps> = ({
       });
       const newProgress = duration * percentage;
       console.log(
-        `Seeking moving at: percentage ${percentage}, progress ${newProgress}`
+        `Seeking moving at: percentage ${percentage}, progress ${newProgress}`,
       );
       setProgress(newProgress);
     };
@@ -162,7 +201,7 @@ export const PlayerControlOverlay: FC<PlayerControlOverlayProps> = ({
   };
 
   const handleOnMouseMoveProgressBar: MouseEventHandler<HTMLDivElement> = (
-    event
+    event,
   ) => {
     const percentage = getProgressPercentageFromEvent({
       event,
@@ -189,6 +228,14 @@ export const PlayerControlOverlay: FC<PlayerControlOverlayProps> = ({
           onMouseLeave={handleOnMouseLeaveProgressBar}
           ref={progressBarContainerRef}
         >
+          {/* Preview thumbnail */}
+          <div css={[previewThumbnailWrapperStyles, { left: clampedPosition }]}>
+            <PreviewThumbnail
+              formattedTimestamp={formatTimestamp(hoverTime)}
+              getThumbnail={getThumbnail}
+              timestamp={hoverTimestamp}
+            />
+          </div>
           <div css={progressBarTrackStyles}>
             <div
               css={[

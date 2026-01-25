@@ -18,6 +18,7 @@ import { debounce } from "../../shared/utils/debounce";
 import { FullscreenContainer } from "../../ui-components/base/fullscreen-container/FullscreenContainer";
 import { PlayerControlOverlay } from "../../ui-components/level-one/player-control-overlay/PlayerControlOverlay";
 import { draw } from "./draw";
+import { getThumbnail } from "./getThumbnail";
 import { playHelper } from "./playHelper";
 import { seekHelper } from "./seekHelper";
 
@@ -79,7 +80,7 @@ export const Player: FC = () => {
         time,
       });
     },
-    [currentVideoSink]
+    [currentVideoSink],
   );
 
   /**
@@ -115,7 +116,7 @@ export const Player: FC = () => {
         time,
       });
     },
-    [currentAudioSink, currentVideoSink, duration]
+    [currentAudioSink, currentVideoSink, duration],
   );
 
   const pauseAndCleanUp = () => {
@@ -280,6 +281,12 @@ export const Player: FC = () => {
     setVolume(newVolume);
   };
 
+  const getThumbnailCallback = useCallback(
+    (timestamp: number) =>
+      getThumbnail({ timestamp, videoSink: currentVideoSink }),
+    [currentVideoSink],
+  );
+
   if (!files) {
     return;
   }
@@ -288,6 +295,7 @@ export const Player: FC = () => {
     <FullscreenContainer ref={fullscreenContainerRef}>
       <PlayerControlOverlay
         duration={duration}
+        getThumbnail={getThumbnailCallback}
         isMuted={isMuted}
         isPlaying={isPlaying}
         onMuteToggle={handleMuteToggle}

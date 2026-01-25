@@ -1,5 +1,6 @@
 import { SetStateAction, useSetAtom } from "jotai";
 
+// TODO: implement file type and validation checks
 export const handleInputFiles = ({
   files,
   setInputFiles,
