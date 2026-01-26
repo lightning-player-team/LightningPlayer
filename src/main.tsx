@@ -8,20 +8,25 @@ import { Root } from "./route-components/root/Root";
 import { RootErrorBoundary } from "./route-components/root/RootErrorBoundary";
 import { ROUTES } from "./route-components/routes";
 
-const router = createBrowserRouter([
+const router = createBrowserRouter(
+  [
+    {
+      path: ROUTES.root,
+      errorElement: <RootErrorBoundary />,
+      Component: Root,
+      children: [
+        { index: true, Component: Home },
+        { path: ROUTES.player, Component: Player },
+      ],
+    },
+  ],
   {
-    path: ROUTES.root,
-    errorElement: <RootErrorBoundary />,
-    Component: Root,
-    children: [
-      { index: true, Component: Home },
-      { path: ROUTES.player, Component: Player },
-    ],
+    basename: "/LightningPlayer/",
   },
-]);
+);
 
 ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
   <StrictMode>
     <RouterProvider router={router} />
-  </StrictMode>
+  </StrictMode>,
 );
