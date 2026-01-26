@@ -147,6 +147,8 @@ Shows/hides on hover. Contains: progress bar with preview thumbnail, play/pause 
 - **Paused seek**: Calls `seekHelper` to draw a single frame at the new position without starting playback.
 - **Playing seek**: Pauses playback first (stops all queued audio nodes), then resumes at the new position.
 
+`seekHelper` fallbacks to the first frame when the video CanvasSink fails to return a canvas (this can happen when, e.g., user seeks to 0 second which is before every frame).
+
 ##### Volume control (`src/ui-components/base/volume-control/VolumeControl.tsx`)
 
 Volume is stored as a 0-1 value in `volumeState` (`src/shared/atoms/volumeState.ts`, persisted via Jotai's `atomWithStorage`). A quadratic curve (`volume * volume`) is applied to the GainNode for more natural perceived loudness control. The `VolumeControl` component expands on hover and stays "pinned" open after user interaction until they interact with another control.
@@ -179,6 +181,8 @@ const showImage = thumbnail && thumbnail.timestamp === timestamp;
 ```
 
 When `timestamp` prop changes, the comparison immediately fails (showing placeholder) without needing a synchronous setState.
+
+Fetching of the thumbnail is expensive, and is done with `useDebouncedEffect`.
 
 ## Critical Configuration
 

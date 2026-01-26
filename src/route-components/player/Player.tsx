@@ -281,13 +281,17 @@ export const Player: FC = () => {
   };
 
   /**
-   * @param newVolume
+   * Supplied to VolumeControl.
+   *
+   * @param newVolume from 0 to 1.
    */
   const handleVolumeChange = (newVolume: number) => {
     setVolume(newVolume);
   };
 
   /**
+   * Supplied to PreviewThumbnail.
+   *
    * @param timestamp in seconds.
    */
   const getThumbnailCallback = useCallback(
