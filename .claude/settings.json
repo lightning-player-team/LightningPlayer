@@ -5,8 +5,9 @@
       "Bash(pnpm build)",
       "Bash(pnpm tauri dev)",
       "Bash(pnpm tauri build)",
-      "Bash(git status)",
-      "Bash(git diff *)"
+      "Bash(git diff *)",
+      "Bash(git show:*)",
+      "Bash(git status)"
     ]
   }
 }
