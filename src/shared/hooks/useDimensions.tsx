@@ -23,8 +23,8 @@ export const useDimensions = <T extends HTMLElement>(
           const contentBoxSize = entry.contentBoxSize[0];
           if (contentBoxSize) {
             setDimensions({
-              width: contentBoxSize.inlineSize,
               height: contentBoxSize.blockSize,
+              width: contentBoxSize.inlineSize,
             });
           }
         }

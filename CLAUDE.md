@@ -70,6 +70,8 @@ UI components in `src/ui-components/`:
 
 - Avoid hard casting as much as possible.
 
+- Lint before build.
+
 - All fields in objects, types, interfaces, enums, and function parameters are alphanumerically sorted. When doing this in styles files, CSS selectors (like &:hover, [data-...]) need to be kept at the end and retain their original order to preserve cascade behavior.
 
 - When writing functions, if we need multiple parameters, put the parameters in a single object and type it inline in the function signature.
@@ -80,7 +82,7 @@ UI components in `src/ui-components/`:
 
 - Only pass refs to a function when the function updates the ref (i.e. ref.current = ...) otherwise pass the ref.current directly.
 
-- For the unmount/cancel flag in useEffects, always name the flag `unmounted` e.g. `let unmounted = false; ... if (!unmounted) // do stuff ... return () => { unmounted = true; }`.
+- For the unmount/cancel flag in useEffects, always name the flag `cancelled` e.g. `let cancelled = false; ... if (!cancelled) // do stuff ... return () => { cancelled = true; }`.
 
 #### Documentation
 

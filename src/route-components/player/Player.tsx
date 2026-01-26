@@ -41,7 +41,7 @@ export const Player: FC = () => {
   const gainNodeRef = useRef<GainNode>(undefined);
 
   // Controls the playback loop and allows pausing.
-  const playRAFRef = useRef<number>(null);
+  const playRAFRef = useRef<number>(undefined);
   // Used by PlayerControlOverlay to toggle play/pause button.
   const [isPlaying, setIsPlaying] = useState(false);
 
@@ -191,8 +191,10 @@ export const Player: FC = () => {
 
   // Rendering the first frame on load.
   useEffect(() => {
-    seek(0);
-  }, [seek]);
+    if (currentVideoSink) {
+      seek(0);
+    }
+  }, [currentVideoSink, seek]);
 
   // Playback cleanup on unmount only.
   useEffect(() => {
@@ -203,7 +205,7 @@ export const Player: FC = () => {
 
   // Load files.
   useEffect(() => {
-    let unmounted = false;
+    let cancelled = false;
 
     console.log("files:", files);
 
@@ -247,7 +249,7 @@ export const Player: FC = () => {
         gainNodeRef.current = gainNode;
       }
 
-      if (!unmounted) {
+      if (!cancelled) {
         setCurrentAudioSink(audioSink);
         setCurrentVideoSink(videoSink);
         setDuration(duration);
@@ -261,7 +263,7 @@ export const Player: FC = () => {
     }
 
     return () => {
-      unmounted = true;
+      cancelled = true;
     };
   }, [files]);
 

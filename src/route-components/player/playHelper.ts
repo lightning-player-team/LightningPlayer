@@ -65,7 +65,7 @@ export const playHelper = async ({
   ctx: CanvasRenderingContext2D;
   duration: number;
   gainNode?: GainNode;
-  playRAFRef: RefObject<number | null>;
+  playRAFRef: RefObject<number | undefined>;
   queuedAudioNodesRef: RefObject<Set<AudioBufferSourceNode>>;
   screenDimensionsRef: RefObject<IDimensions | undefined>;
   setIsPlaying: Dispatch<SetStateAction<boolean>>;

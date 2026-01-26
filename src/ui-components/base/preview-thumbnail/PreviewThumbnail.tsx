@@ -1,4 +1,8 @@
-import { FC, useEffect, useRef, useState } from "react";
+import { FC, useCallback, useEffect, useRef, useState } from "react";
+import {
+  IDebouncedEffectCallbackParams,
+  useDebouncedEffect,
+} from "../../../shared/hooks/useDebouncedEffect";
 import { formatTimestamp } from "../../../shared/utils/formatTimestamp";
 import {
   containerStyles,
@@ -6,6 +10,9 @@ import {
   thumbnailStyles,
   timestampStyles,
 } from "./PreviewThumbnail.styles";
+
+/** Debounce delay for thumbnail fetching in milliseconds. */
+const THUMBNAIL_DEBOUNCE_MS = 50;
 
 export interface IPreviewThumbnailProps {
   /**
@@ -30,12 +37,15 @@ export const PreviewThumbnail: FC<IPreviewThumbnailProps> = ({
   const [thumbnail, setThumbnail] = useState<IThumbnail | undefined>();
   const prevUrlRef = useRef<string | undefined>(undefined);
 
-  useEffect(() => {
-    let unmounted = false;
-
-    const fetchThumbnail = async () => {
+  const fetchThumbnail = useCallback(
+    async (state: IDebouncedEffectCallbackParams) => {
+      if (state.cancelled) {
+        console.log("PreviewThumbnail: cancelled before fetching.");
+        return;
+      }
       const url = await getThumbnail(timestamp);
-      if (unmounted) {
+      if (state.cancelled) {
+        console.log("PreviewThumbnail: cancelled after fetching.");
         // Revoke if we got a URL but the effect was cancelled.
         if (url) URL.revokeObjectURL(url);
         return;
@@ -48,14 +58,12 @@ export const PreviewThumbnail: FC<IPreviewThumbnailProps> = ({
       if (url) {
         setThumbnail({ timestamp, url });
       }
-    };
+    },
+    [getThumbnail, timestamp],
+  );
 
-    fetchThumbnail();
-
-    return () => {
-      unmounted = true;
-    };
-  }, [getThumbnail, timestamp]);
+  // Get thumbnail when timestamp changes but debounced.
+  useDebouncedEffect(fetchThumbnail, THUMBNAIL_DEBOUNCE_MS);
 
   // Cleanup on unmount.
   useEffect(() => {

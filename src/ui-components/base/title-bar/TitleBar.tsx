@@ -16,9 +16,9 @@ import {
 } from "./TitleBar.styles";
 
 enum HoverState {
-  None,
   Hovered,
   HoveredClicked,
+  None,
 }
 
 export const TitleBar: FC = () => {
