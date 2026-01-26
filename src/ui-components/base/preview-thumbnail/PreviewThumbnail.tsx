@@ -1,4 +1,5 @@
 import { FC, useEffect, useRef, useState } from "react";
+import { formatTimestamp } from "../../../shared/utils/formatTimestamp";
 import {
   containerStyles,
   placeholderStyles,
@@ -6,26 +7,35 @@ import {
   timestampStyles,
 } from "./PreviewThumbnail.styles";
 
-interface PreviewThumbnailProps {
-  formattedTimestamp: string;
+export interface IPreviewThumbnailProps {
+  /**
+   * @param timestamp in seconds.
+   */
   getThumbnail: (timestamp: number) => Promise<string | undefined>;
+  /**
+   * timestamp in seconds.
+   */
   timestamp: number;
 }
 
-export const PreviewThumbnail: FC<PreviewThumbnailProps> = ({
-  formattedTimestamp,
+interface IThumbnail {
+  timestamp: number;
+  url: string;
+}
+
+export const PreviewThumbnail: FC<IPreviewThumbnailProps> = ({
   getThumbnail,
   timestamp,
 }) => {
-  const [imageUrl, setImageUrl] = useState<string | undefined>();
+  const [thumbnail, setThumbnail] = useState<IThumbnail | undefined>();
   const prevUrlRef = useRef<string | undefined>(undefined);
 
   useEffect(() => {
-    let cancelled = false;
+    let unmounted = false;
 
     const fetchThumbnail = async () => {
       const url = await getThumbnail(timestamp);
-      if (cancelled) {
+      if (unmounted) {
         // Revoke if we got a URL but the effect was cancelled.
         if (url) URL.revokeObjectURL(url);
         return;
@@ -35,13 +45,15 @@ export const PreviewThumbnail: FC<PreviewThumbnailProps> = ({
         URL.revokeObjectURL(prevUrlRef.current);
       }
       prevUrlRef.current = url;
-      setImageUrl(url);
+      if (url) {
+        setThumbnail({ timestamp, url });
+      }
     };
 
     fetchThumbnail();
 
     return () => {
-      cancelled = true;
+      unmounted = true;
     };
   }, [getThumbnail, timestamp]);
 
@@ -54,14 +66,17 @@ export const PreviewThumbnail: FC<PreviewThumbnailProps> = ({
     };
   }, []);
 
+  // Only show the image if it matches the current timestamp and is loaded.
+  const showImage = thumbnail && thumbnail.timestamp === timestamp;
+
   return (
     <div css={containerStyles}>
-      {imageUrl ? (
-        <img alt="Preview" css={thumbnailStyles} src={imageUrl} />
+      {showImage ? (
+        <img alt="Preview" css={thumbnailStyles} src={thumbnail.url} />
       ) : (
         <div css={placeholderStyles} />
       )}
-      <span css={timestampStyles}>{formattedTimestamp}</span>
+      <span css={timestampStyles}>{formatTimestamp(timestamp)}</span>
     </div>
   );
 };

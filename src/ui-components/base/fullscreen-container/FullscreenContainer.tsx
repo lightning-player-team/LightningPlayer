@@ -3,7 +3,7 @@ import { forwardRef, ReactNode } from "react";
 import { titleBarPinnedState } from "../../../shared/atoms/titleBarPinnedState";
 import { fullscreenContainerStyles } from "./FullscreenContainer.styles";
 
-interface FullscreenContainerProps {
+interface IFullscreenContainerProps {
   children?: ReactNode;
   className?: string;
 }
@@ -13,7 +13,7 @@ interface FullscreenContainerProps {
  */
 export const FullscreenContainer = forwardRef<
   HTMLDivElement,
-  FullscreenContainerProps
+  IFullscreenContainerProps
 >(({ children, className }, ref) => {
   const isTitleBarPinned = useAtomValue(titleBarPinnedState);
   return (

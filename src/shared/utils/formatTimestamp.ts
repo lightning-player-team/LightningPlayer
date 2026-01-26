@@ -1,6 +1,6 @@
 /**
- * Formats seconds into a timestamp string.
- * Returns MM:SS for durations under an hour, HH:MM:SS otherwise.
+ * Formats seconds into a timestamp string. For fractional seconds, it floors the value.
+ * @returns MM:SS for timestamps under an hour, HH:MM:SS otherwise.
  */
 export const formatTimestamp = (seconds: number): string => {
   const totalSeconds = Math.floor(seconds);

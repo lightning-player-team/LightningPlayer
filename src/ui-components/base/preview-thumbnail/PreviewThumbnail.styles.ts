@@ -1,7 +1,7 @@
 import { css, Theme } from "@emotion/react";
 
-const thumbnailHeight = 90;
-const thumbnailWidth = 160;
+export const thumbnailHeight = 90;
+export const thumbnailWidth = 160;
 const borderRadius = 4;
 
 export const containerStyles = css({

@@ -136,7 +136,7 @@ export const playButtonStyles = (theme: Theme) =>
     padding: 0,
   });
 
-export const previewThumbnailWrapperStyles = css({
+export const previewThumbnailContainerStyles = css({
   bottom: "100%",
   marginBottom: 8,
   opacity: 0,

@@ -37,6 +37,13 @@ pnpm lint          # ESLint
 
 ## Conventions
 
+### Naming
+
+- Interfaces should start with the upper case I: e.g. `IDimensions`.
+- Interfaces for component props should end with `Props` e.g. `IButtonProps`.
+- Enums and their keys should use upper camel case: e.g. `ButtonVariant.Text`, or upper snake case for numeric and string constants: e.g. `ZIndex.TITLE_BAR`.
+- In `.styles.` files, css styles should have the suffix `Styles`; use `container` instead of `wrapper`. E.g. `buttonContainerStyles`.
+
 ### File Naming and Structure
 
 - `Component.tsx` - React component
@@ -57,15 +64,29 @@ UI components in `src/ui-components/`:
 
 ### Coding Style
 
+#### Implementation
+
+- Avoid using null as much as possible.
+
+- Avoid hard casting as much as possible.
+
 - All fields in objects, types, interfaces, enums, and function parameters are alphanumerically sorted. When doing this in styles files, CSS selectors (like &:hover, [data-...]) need to be kept at the end and retain their original order to preserve cascade behavior.
 
 - When writing functions, if we need multiple parameters, put the parameters in a single object and type it inline in the function signature.
 
 - A file containing only one function should use the exact same name as the function. A file should define at most one React component. A file containing a react component should use the exact same name as the component.
 
-- When initializing a react ref, use undefined if the ref is not pointing to an HTML element.
+- When initializing a react ref, only use null when the ref is pointing to an HTML element; for all other cases, use undefined to represent an unset value.
 
 - Only pass refs to a function when the function updates the ref (i.e. ref.current = ...) otherwise pass the ref.current directly.
+
+- For the unmount/cancel flag in useEffects, always name the flag `unmounted` e.g. `let unmounted = false; ... if (!unmounted) // do stuff ... return () => { unmounted = true; }`.
+
+#### Documentation
+
+- Always end comment sentences with a period.
+
+- Always write TSDoc style function headers for functions - include the @param and @returns tags when applicable.
 
 - When debugging or making changes, keep debug comments such as `console.log` or at least comment them out instead of removing them.
 
@@ -77,22 +98,85 @@ Provides Emotion ThemeProvider, global styles, and Tauri-specific components (Ti
 
 ### Player (`src/route-components/player/Player.tsx`)
 
+#### Summary
+
 Uses mediabunny for video decoding and Web Audio API for audio playback:
 
 1. Creates `Input` from file blob with `BlobSource`
 2. Gets video/audio tracks via `getVideoTracks()` / `getAudioTracks()`
 3. Creates `CanvasSink` for video frames and `AudioBufferSink` for audio buffers
 4. Audio: Schedules `AudioBufferSourceNode` instances via `playAudio.ts`
-5. Video: Renders frames to canvas via `requestAnimationFrame` loop; each animation frame we decide whether to render a new video frame or request the next frame by looking at `audioContext.currentTime` for A/V sync.
+5. Video: Renders frames to canvas via `requestAnimationFrame` loop
 
-**Seeking behavior:**
+#### Video playback (`src/route-components/player/playHelper.ts`)
 
-- Paused seek: Calls `seekHelper` to draw a single frame at the new position without starting playback
-- Playing seek: Pauses playback first (stops all queued audio nodes via `queuedAudioNodesRef`), then resumes at the new position
+Uses `AudioContext.currentTime` as the master clock for A/V sync:
 
-**Audio cleanup:** Scheduled audio nodes are tracked in `queuedAudioNodesRef`. On pause/seek, all tracked nodes are stopped via `node.stop()` to prevent old audio from playing. Nodes are only added to the Set after `node.start()` is called. `audioIteratorRef.current?.return();` and `audioContextRef.current?.suspend();` are called to deallocate resources.
+1. Creates async iterator from `CanvasSink.canvases(time)`.
+2. Stores iterator in `canvasIteratorRef` for cleanup on pause.
+3. Runs `requestAnimationFrame` loop (`playLoop`) that:
+   - Calculates current timestamp from `audioContext.currentTime - audioContextStartTime + time`.
+   - If current frame's timestamp <= current time, draws it and fetches next frame.
+   - `getNextFrame` skips frames if video fps exceeds display refresh rate.
+4. Stores RAF ID in `playRAFRef` for cancellation.
 
-**Video cleanup:** `cancelAnimationFrame(playRAFRef.current);` is used to cancel the frame rendering requestAnimationFrame callback, effectively stops playback. `canvasIteratorRef.current?.return();` is called to deallocate resources.
+**Cleanup:** `cancelAnimationFrame(playRAFRef.current)` stops the loop. `canvasIteratorRef.current?.return()` releases iterator resources.
+
+#### Audio playback (`src/route-components/player/playAudio.ts`)
+
+Schedules audio buffers using Web Audio API:
+
+1. Creates async iterator from `AudioBufferSink.buffers(time)`.
+2. For each buffer, creates `AudioBufferSourceNode` and connects to `GainNode`.
+3. Schedules playback:
+   - Future buffers: `node.start(audioContextStartTime + timestamp - time)`.
+   - Past buffers (partially elapsed): `node.start(audioContext.currentTime, offset)`.
+4. Throttles when >1 second buffered ahead.
+5. Tracks scheduled nodes in `queuedAudioNodesRef` Set (added after `start()`, removed on `ended`).
+
+**Cleanup:** All nodes in `queuedAudioNodesRef` are stopped via `node.stop()`. `audioIteratorRef.current?.return()` releases iterator. `audioContextRef.current?.suspend()` stops scheduled audio.
+
+#### Player controls (`src/ui-components/level-one/player-control-overlay/PlayerControlOverlay.tsx`)
+
+Shows/hides on hover. Contains: progress bar with preview thumbnail, play/pause button, and volume control.
+
+##### Seeking (`src/route-components/player/seekHelper.ts`)
+
+- **Paused seek**: Calls `seekHelper` to draw a single frame at the new position without starting playback.
+- **Playing seek**: Pauses playback first (stops all queued audio nodes), then resumes at the new position.
+
+##### Volume control (`src/ui-components/base/volume-control/VolumeControl.tsx`)
+
+Volume is stored as a 0-1 value in `volumeState` (`src/shared/atoms/volumeState.ts`, persisted via Jotai's `atomWithStorage`). A quadratic curve (`volume * volume`) is applied to the GainNode for more natural perceived loudness control. The `VolumeControl` component expands on hover and stays "pinned" open after user interaction until they interact with another control.
+
+##### Progress bar (`src/ui-components/level-one/player-control-overlay/PlayerControlOverlay.tsx`)
+
+Supports click-to-seek and drag-to-seek:
+
+1. **Hover**: Shows preview thumbnail at hovered position (clamped to stay within bounds).
+2. **Mouse down**: Pauses playback if playing, updates progress immediately.
+3. **Drag**: Continuously updates progress via document-level `mousemove` listener.
+4. **Mouse up**: If was playing, resumes at new position; otherwise calls `seek()` to render frame.
+
+Helper functions: `getProgressPercentageFromEvent` (`src/ui-components/level-one/player-control-overlay/getProgressPercentageFromEvent.ts`, returns 0-1), `getProgressFromEvent` (`src/ui-components/level-one/player-control-overlay/getProgressFromEvent.ts`, converts to seconds).
+
+##### Preview thumbnail (`src/ui-components/base/preview-thumbnail/PreviewThumbnail.tsx`)
+
+Uses a pattern to avoid synchronous setState in effects (which causes cascading renders). Store metadata (timestamp) alongside async data (url), then compare in render:
+
+```tsx
+const [thumbnail, setThumbnail] = useState<
+  { timestamp: number; url: string } | undefined
+>();
+
+// In effect: only set state when data arrives.
+setThumbnail({ timestamp, url });
+
+// In render: compare to decide what to show.
+const showImage = thumbnail && thumbnail.timestamp === timestamp;
+```
+
+When `timestamp` prop changes, the comparison immediately fails (showing placeholder) without needing a synchronous setState.
 
 ## Critical Configuration
 

@@ -1,6 +1,8 @@
 /**
- * Calculates volume (0-100) from mouse position relative to slider.
- * Returns undefined if the slider ref is not available or has zero width.
+ * @param event - Mouse event containing clientX position.
+ * @param sliderRef - Ref to the slider element.
+ * @returns Volume (0-1) from mouse position relative to slider, or
+ * undefined if the slider ref is not available or has zero width.
  */
 export const getVolumeFromEvent = ({
   event,
@@ -12,9 +14,5 @@ export const getVolumeFromEvent = ({
   if (!sliderRef.current) return undefined;
   const rect = sliderRef.current.getBoundingClientRect();
   if (rect.width === 0) return undefined;
-  const percentage = Math.max(
-    0,
-    Math.min(1, (event.clientX - rect.left) / rect.width)
-  );
-  return Math.round(percentage * 100);
+  return Math.max(0, Math.min(1, (event.clientX - rect.left) / rect.width));
 };

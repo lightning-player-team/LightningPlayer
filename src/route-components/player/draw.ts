@@ -1,5 +1,5 @@
 import { WrappedCanvas } from "mediabunny";
-import { Dimensions } from "../../shared/types/dimensions";
+import { IDimensions } from "../../shared/types/dimensions";
 
 /**
  * Draws the WrappedCanvas to the target canvas context.
@@ -10,7 +10,7 @@ export const draw = ({
   wrappedCanvas,
 }: {
   ctx: CanvasRenderingContext2D;
-  screenDimensions: Dimensions;
+  screenDimensions: IDimensions;
   wrappedCanvas: WrappedCanvas;
 }) => {
   const { canvas } = wrappedCanvas;

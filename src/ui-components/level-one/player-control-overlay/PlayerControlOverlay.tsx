@@ -3,15 +3,16 @@ import {
   FC,
   MouseEventHandler,
   SetStateAction,
-  useEffect,
   useRef,
   useState,
 } from "react";
 import PauseIcon from "../../../assets/svgs/PauseIcon";
 import PlayIcon from "../../../assets/svgs/PlayIcon";
-import { formatTimestamp } from "../../../shared/utils/formatTimestamp";
+import { useDimensions } from "../../../shared/hooks/useDimensions";
 import { PreviewThumbnail } from "../../base/preview-thumbnail/PreviewThumbnail";
+import { thumbnailWidth } from "../../base/preview-thumbnail/PreviewThumbnail.styles";
 import { VolumeControl } from "../../base/volume-control/VolumeControl";
+import { getProgressFromEvent } from "./getProgressFromEvent";
 import { getProgressPercentageFromEvent } from "./getProgressPercentageFromEvent";
 import {
   bottomControlsContainerStyles,
@@ -20,7 +21,7 @@ import {
   leftContainerStyles,
   playButtonStyles,
   playerControlOverlayContainerStyles,
-  previewThumbnailWrapperStyles,
+  previewThumbnailContainerStyles,
   progressBarContainerStyles,
   progressBarCurrentStyles,
   progressbarThumbStyles,
@@ -29,18 +30,21 @@ import {
   rightContainerStyles,
 } from "./PlayerControlOverlay.styles";
 
-export interface PlayerControlOverlayProps {
+export interface IPlayerControlOverlayProps {
   /**
    * Duration in seconds.
    */
   duration: number;
   /**
-   * Fetch a thumbnail for the given timestamp.
+   * @param timestamp in seconds. This component simply passes it to PreviewThumbnail.
    */
   getThumbnail: (timestamp: number) => Promise<string | undefined>;
   isMuted: boolean;
   isPlaying: boolean;
   onMuteToggle: () => void;
+  /**
+   * @param volume from 0 to 100. This component simply passes it to VolumeControl.
+   */
   onVolumeChange: (volume: number) => void;
   pause: () => void;
   /**
@@ -62,7 +66,7 @@ export interface PlayerControlOverlayProps {
   volume: number;
 }
 
-export const PlayerControlOverlay: FC<PlayerControlOverlayProps> = ({
+export const PlayerControlOverlay: FC<IPlayerControlOverlayProps> = ({
   duration,
   getThumbnail,
   isMuted,
@@ -76,46 +80,19 @@ export const PlayerControlOverlay: FC<PlayerControlOverlayProps> = ({
   setProgress,
   volume,
 }) => {
-  const [containerWidth, setContainerWidth] = useState(0);
   const [isHovered, setIsHovered] = useState(false);
   // HoverPercentage from 0 to 1. Undefined means not hovering.
   const [hoverPercentage, setHoverPercentage] = useState<number | undefined>(
     undefined,
   );
   const [isProgressBarHovered, setIsProgressBarHovered] = useState(false);
+  // The VolumeControl is pinned when the user makes an update to the volume.
+  // It stays pinned until the user interacts with another player control element.
   const [isVolumePinned, setIsVolumePinned] = useState(false);
   const progressBarContainerRef = useRef<HTMLDivElement>(null);
+  const progressBarContainerDimensions = useDimensions(progressBarContainerRef);
   // Percentage from 0 to 1.
-  const percentage = progress / duration;
-
-  // Track container width for clamping thumbnail position.
-  useEffect(() => {
-    const container = progressBarContainerRef.current;
-    if (!container) return;
-
-    const resizeObserver = new ResizeObserver((entries) => {
-      for (const entry of entries) {
-        setContainerWidth(entry.contentRect.width);
-      }
-    });
-    resizeObserver.observe(container);
-
-    return () => {
-      resizeObserver.disconnect();
-    };
-  }, []);
-
-  // Calculate thumbnail position.
-  const thumbnailWidth = 160;
-  const halfThumbnailWidth = thumbnailWidth / 2;
-  const currentHoverPercentage = hoverPercentage ?? 0;
-  const hoverTime = currentHoverPercentage * duration;
-  const hoverTimestamp = Math.floor(hoverTime);
-  const rawPosition = currentHoverPercentage * containerWidth;
-  const clampedPosition = Math.max(
-    halfThumbnailWidth,
-    Math.min(containerWidth - halfThumbnailWidth, rawPosition),
-  );
+  const progressPercentage = progress / duration;
 
   const handleOnClickPlayButton = () => {
     setIsVolumePinned(false);
@@ -151,13 +128,13 @@ export const PlayerControlOverlay: FC<PlayerControlOverlayProps> = ({
     event.preventDefault();
     setIsVolumePinned(false);
 
-    const percentage = getProgressPercentageFromEvent({
+    const newProgress = getProgressFromEvent({
+      duration,
       event,
       progressBarContainerRef,
     });
-    const newProgress = duration * percentage;
     console.log(
-      `Seeking started at: percentage ${percentage}, progress ${newProgress}`,
+      `Seeking started at: percentage ${progressPercentage}, progress ${newProgress}`,
     );
     setProgress(newProgress);
 
@@ -167,23 +144,23 @@ export const PlayerControlOverlay: FC<PlayerControlOverlayProps> = ({
 
     // Drag handlers.
     const handleMouseMove = (e: MouseEvent) => {
-      const percentage = getProgressPercentageFromEvent({
+      const newProgress = getProgressFromEvent({
+        duration,
         event: e,
         progressBarContainerRef,
       });
-      const newProgress = duration * percentage;
       console.log(
-        `Seeking moving at: percentage ${percentage}, progress ${newProgress}`,
+        `Seeking moving at: percentage ${progressPercentage}, progress ${newProgress}`,
       );
       setProgress(newProgress);
     };
 
     const handleMouseUp = (e: MouseEvent) => {
-      const percentage = getProgressPercentageFromEvent({
+      const newProgress = getProgressFromEvent({
+        duration,
         event: e,
         progressBarContainerRef,
       });
-      const newProgress = duration * percentage;
       console.log("Seeking ended.");
 
       if (isPlaying) {
@@ -210,6 +187,17 @@ export const PlayerControlOverlay: FC<PlayerControlOverlayProps> = ({
     setHoverPercentage(percentage);
   };
 
+  // Calculate previewThumbnailLeft. When progressBarContainerDimensions is
+  // not ready, fall back to minLeft which is the position at 0 second.
+  const containerWidth = progressBarContainerDimensions?.width ?? 0;
+  const rawPosition = (hoverPercentage ?? 0) * containerWidth;
+  const minLeft = thumbnailWidth / 2;
+  const maxLeft = containerWidth - thumbnailWidth / 2;
+  const previewThumbnailLeft = Math.max(
+    minLeft,
+    Math.min(maxLeft, rawPosition),
+  );
+
   return (
     <div
       css={playerControlOverlayContainerStyles}
@@ -229,19 +217,24 @@ export const PlayerControlOverlay: FC<PlayerControlOverlayProps> = ({
           ref={progressBarContainerRef}
         >
           {/* Preview thumbnail */}
-          <div css={[previewThumbnailWrapperStyles, { left: clampedPosition }]}>
+          <div
+            css={[
+              previewThumbnailContainerStyles,
+              { left: previewThumbnailLeft },
+            ]}
+          >
             <PreviewThumbnail
-              formattedTimestamp={formatTimestamp(hoverTime)}
               getThumbnail={getThumbnail}
-              timestamp={hoverTimestamp}
+              timestamp={Math.floor((hoverPercentage ?? 0) * duration)}
             />
           </div>
+          {/* Main progress bar */}
           <div css={progressBarTrackStyles}>
             <div
               css={[
                 progressBarTrackFillStyles,
                 {
-                  width: `${(hoverPercentage || 0) * 100}%`,
+                  width: `${(hoverPercentage ?? 0) * 100}%`,
                 },
               ]}
             />
@@ -250,7 +243,7 @@ export const PlayerControlOverlay: FC<PlayerControlOverlayProps> = ({
             css={[
               progressBarCurrentStyles,
               {
-                width: `${percentage * 100}%`,
+                width: `${progressPercentage * 100}%`,
               },
             ]}
           ></div>
@@ -258,11 +251,12 @@ export const PlayerControlOverlay: FC<PlayerControlOverlayProps> = ({
             css={[
               progressbarThumbStyles,
               {
-                translate: `${percentage * 100}cqw`,
+                translate: `${progressPercentage * 100}cqw`,
               },
             ]}
           />
         </div>
+        {/* Button controls */}
         <div css={buttonContainerStyles}>
           <div css={leftContainerStyles}>
             <VolumeControl

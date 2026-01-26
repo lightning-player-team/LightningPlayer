@@ -3,6 +3,9 @@ import { canvasToBlob } from "./canvasToBlob";
 
 /**
  * Fetches a thumbnail for the given timestamp.
+ *
+ * @returns A promise that resolves to an object URL of the thumbnail image, or undefined if unavailable.
+ * The caller is responsible for revoking the object URL when no longer needed.
  */
 export const getThumbnail = async ({
   timestamp,

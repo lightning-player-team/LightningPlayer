@@ -1,6 +1,6 @@
 /**
- * Calculates progress percentage (0-1) from mouse position relative to progress bar.
- * Returns 0 if the progress bar ref is not available.
+ * @returns progress percentage (0-1) from mouse position relative to progress bar.
+ * @returns 0 if progressBarContainer is not available.
  */
 export const getProgressPercentageFromEvent = ({
   event,

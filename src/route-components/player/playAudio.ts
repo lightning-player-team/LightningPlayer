@@ -75,9 +75,9 @@ export const playAudio = async ({
         const id = setInterval(() => {
           const currentTimestamp =
             audioContext.currentTime - audioContextStartTime + time;
-          console.log(
-            `Throttling playAudio: ${timestamp}, ${currentTimestamp}`
-          );
+          // console.log(
+          //   `Throttling playAudio: ${timestamp}, ${currentTimestamp}`,
+          // );
           if (timestamp - currentTimestamp < 1) {
             clearInterval(id);
             resolve();

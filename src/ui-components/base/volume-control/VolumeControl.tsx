@@ -20,16 +20,23 @@ import {
   trackStyles,
 } from "./VolumeControl.styles";
 
-interface VolumeControlProps {
+export interface IVolumeControlProps {
   isMuted: boolean;
+  /**
+   * The VolumeControl is pinned when the user makes an update to the volume.
+   * It stays pinned until the user interacts with another player control element.
+   */
   isPinned: boolean;
   onMuteToggle: () => void;
+  /**
+   * @param volume goes from 0 to 1.
+   */
   onVolumeChange: (volume: number) => void;
   setIsPinned: Dispatch<SetStateAction<boolean>>;
   volume: number;
 }
 
-export const VolumeControl: FC<VolumeControlProps> = ({
+export const VolumeControl: FC<IVolumeControlProps> = ({
   isMuted,
   isPinned,
   onMuteToggle,
@@ -41,8 +48,7 @@ export const VolumeControl: FC<VolumeControlProps> = ({
   const sliderRef = useRef<HTMLDivElement>(null);
 
   const isExpanded = isHovered || isPinned;
-  const thumbPosition =
-    ((isMuted ? 0 : volume) / 100) * (sliderWidth - thumbSize);
+  const thumbPosition = (isMuted ? 0 : volume) * (sliderWidth - thumbSize);
   const VolumeIcon = isMuted ? SpeakerMuteIcon : SpeakerIcon;
 
   const handleMouseEnter = () => {
@@ -55,10 +61,12 @@ export const VolumeControl: FC<VolumeControlProps> = ({
 
   const handleSliderMouseDown: MouseEventHandler<HTMLDivElement> = (event) => {
     if (event.button !== 0) return;
+    // Prevents text selection.
     event.preventDefault();
     setIsPinned(true);
     const newVolume = getVolumeFromEvent({ event, sliderRef });
     if (newVolume !== undefined) {
+      console.log("VolumeControl: setting volume:", newVolume);
       onVolumeChange(newVolume);
     }
 
@@ -66,6 +74,7 @@ export const VolumeControl: FC<VolumeControlProps> = ({
     const handleMouseMove = (e: MouseEvent) => {
       const newVolume = getVolumeFromEvent({ event: e, sliderRef });
       if (newVolume !== undefined) {
+        console.log("VolumeControl: setting volume:", newVolume);
         onVolumeChange(newVolume);
       }
     };

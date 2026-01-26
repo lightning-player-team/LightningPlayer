@@ -13,7 +13,7 @@ import { inputFilesState } from "../../shared/atoms/inputFilesState";
 import { isMutedState } from "../../shared/atoms/isMutedState";
 import { titleBarPinnedState } from "../../shared/atoms/titleBarPinnedState";
 import { volumeState } from "../../shared/atoms/volumeState";
-import { Dimensions } from "../../shared/types/dimensions";
+import { IDimensions } from "../../shared/types/dimensions";
 import { debounce } from "../../shared/utils/debounce";
 import { FullscreenContainer } from "../../ui-components/base/fullscreen-container/FullscreenContainer";
 import { PlayerControlOverlay } from "../../ui-components/level-one/player-control-overlay/PlayerControlOverlay";
@@ -48,7 +48,7 @@ export const Player: FC = () => {
   const isTitleBarPinned = useAtomValue(titleBarPinnedState);
   const fullscreenContainerRef = useRef<HTMLDivElement>(null);
   // Used for drawing and updated by resize handler.
-  const screenDimensionsRef = useRef<Dimensions>(undefined);
+  const screenDimensionsRef = useRef<IDimensions>(undefined);
 
   // Used by the play loop to keep track of the frame to render.
   const currentFrameRef = useRef<WrappedCanvas | undefined>(undefined);
@@ -269,7 +269,8 @@ export const Player: FC = () => {
   // currentAudioSink is included to re-run when audio is (re-)initialized.
   useEffect(() => {
     if (gainNodeRef.current) {
-      gainNodeRef.current.gain.value = isMuted ? 0 : volume / 100;
+      // Quadratic curve for more natural perceived control.
+      gainNodeRef.current.gain.value = isMuted ? 0 : volume * volume;
     }
   }, [currentAudioSink, isMuted, volume]);
 
@@ -277,10 +278,16 @@ export const Player: FC = () => {
     setIsMuted(!isMuted);
   };
 
+  /**
+   * @param newVolume
+   */
   const handleVolumeChange = (newVolume: number) => {
     setVolume(newVolume);
   };
 
+  /**
+   * @param timestamp in seconds.
+   */
   const getThumbnailCallback = useCallback(
     (timestamp: number) =>
       getThumbnail({ timestamp, videoSink: currentVideoSink }),

@@ -5,7 +5,7 @@ import {
   WrappedCanvas,
 } from "mediabunny";
 import { Dispatch, RefObject, SetStateAction } from "react";
-import { Dimensions } from "../../shared/types/dimensions";
+import { IDimensions } from "../../shared/types/dimensions";
 import { draw } from "./draw";
 import { playAudio } from "./playAudio";
 
@@ -67,7 +67,7 @@ export const playHelper = async ({
   gainNode?: GainNode;
   playRAFRef: RefObject<number | null>;
   queuedAudioNodesRef: RefObject<Set<AudioBufferSourceNode>>;
-  screenDimensionsRef: RefObject<Dimensions | undefined>;
+  screenDimensionsRef: RefObject<IDimensions | undefined>;
   setIsPlaying: Dispatch<SetStateAction<boolean>>;
   setProgress: Dispatch<SetStateAction<number>>;
   time: number;
@@ -159,7 +159,7 @@ export const playHelper = async ({
         return;
       } else {
         console.log(
-          "Waiting for getNextFrame to resolve, skipping animation frame..."
+          "Waiting for getNextFrame to resolve, skipping animation frame...",
         );
         playRAFRef.current = requestAnimationFrame(playLoop);
         return;

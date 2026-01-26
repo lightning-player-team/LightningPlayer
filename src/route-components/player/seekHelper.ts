@@ -1,6 +1,6 @@
 import { CanvasSink, WrappedCanvas } from "mediabunny";
 import { RefObject } from "react";
-import { Dimensions } from "../../shared/types/dimensions";
+import { IDimensions } from "../../shared/types/dimensions";
 import { draw } from "./draw";
 
 /**
@@ -22,7 +22,7 @@ export const seekHelper = async ({
   ctx: CanvasRenderingContext2D;
   currentFrameRef: RefObject<WrappedCanvas | undefined>;
   currentVideoSink: CanvasSink | undefined;
-  screenDimensionsRef: RefObject<Dimensions | undefined>;
+  screenDimensionsRef: RefObject<IDimensions | undefined>;
   time: number;
 }): Promise<void> => {
   console.log(`seek: started for ${time}.`);
