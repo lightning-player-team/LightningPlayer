@@ -225,7 +225,7 @@ export const PlayerControlOverlay: FC<IPlayerControlOverlayProps> = ({
           >
             <PreviewThumbnail
               getThumbnail={getThumbnail}
-              timestamp={Math.floor((hoverPercentage ?? 0) * duration)}
+              timestamp={(hoverPercentage ?? 0) * duration}
             />
           </div>
           {/* Main progress bar */}

@@ -39,6 +39,7 @@ export const PreviewThumbnail: FC<IPreviewThumbnailProps> = ({
 
   const fetchThumbnail = useCallback(
     async (state: IDebouncedEffectCallbackParams) => {
+      console.log(`PreviewThumbnail: fetching for ${timestamp}s`);
       if (state.cancelled) {
         console.log("PreviewThumbnail: cancelled before fetching.");
         return;

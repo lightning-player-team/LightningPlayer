@@ -53,7 +53,7 @@ export const playAudio = async ({
 
     const currentTimestamp =
       audioContext.currentTime - audioContextStartTime + time;
-    console.log(`playAudio: ${timestamp}, ${currentTimestamp}`);
+    // console.log(`playAudio: ${timestamp}, ${currentTimestamp}`);
 
     // Two cases: Either, the audio starts in the future or in the past
     if (timestamp >= currentTimestamp) {
