@@ -44,6 +44,7 @@ const ReactCompilerConfig = {
 
 // https://vite.dev/config/
 export default defineConfig({
+  base: "/LightningPlayer/",
   plugins: [
     react({
       babel: {
@@ -84,6 +85,7 @@ export default defineConfig({
   // Env variables starting with the item of `envPrefix` will be exposed in tauri's source code through `import.meta.env`.
   envPrefix: ["VITE_", "TAURI_ENV_*"],
   build: {
+    chunkSizeWarningLimit: 600,
     // Tauri uses Chromium on Windows and WebKit on macOS and Linux
     target:
       process.env.TAURI_ENV_PLATFORM == "windows" ? "chrome105" : "safari13",
