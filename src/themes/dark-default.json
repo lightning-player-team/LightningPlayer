@@ -9,7 +9,8 @@
     },
     "playerControls": {
       "button": {
-        "color": "rgb(238, 238, 238)"
+        "color": "rgba(238, 238, 238, 0.7)",
+        "foreground": "rgb(238, 238, 238)"
       },
       "previewThumbnail": {
         "background": "rgb(40, 40, 40)",
@@ -52,6 +53,18 @@
     },
     "window": {
       "background": "rgba(52, 52, 52, 0.98)"
+    }
+  },
+  "motion": {
+    "playerControls": {
+      "button": {
+        "transitionDuration": "0.4s",
+        "transitionTimingFunction": "ease-in-out"
+      },
+      "progressBar": {
+        "transitionDuration": "0.2s",
+        "transitionTimingFunction": "ease-in-out"
+      }
     }
   }
 }

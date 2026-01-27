@@ -6,9 +6,6 @@ export const progressBarThumbRadius = 6;
 export const progressBarThumbExpandedRadius = 8;
 const progressBarContainerHeight = progressBarThumbExpandedRadius * 2;
 
-const transitionDuration = "0.1s";
-const transitionTimingFunction = "cubic-bezier(0.4, 0, 1, 1)";
-
 export const playerControlOverlayContainerStyles = css({
   background: "transparent",
   height: "100%",
@@ -53,7 +50,7 @@ export const progressBarCurrentStyles = (theme: Theme) =>
     borderRadius: progressBarTrackHeight / 2,
     height: progressBarTrackHeight,
     position: "absolute",
-    transition: `transform ${transitionDuration} ${transitionTimingFunction}`,
+    transition: `transform ${theme.motion.playerControls.progressBar.transitionDuration} ${theme.motion.playerControls.progressBar.transitionTimingFunction}`,
 
     "[data-is-progress-bar-hovered=true] &": {
       transform: `scaleY(${
@@ -68,7 +65,7 @@ export const progressbarThumbStyles = (theme: Theme) =>
     borderRadius: "50%",
     height: progressBarThumbRadius * 2,
     position: "absolute",
-    transition: `scale ${transitionDuration} ${transitionTimingFunction}`,
+    transition: `transform ${theme.motion.playerControls.progressBar.transitionDuration} ${theme.motion.playerControls.progressBar.transitionTimingFunction}`,
     width: progressBarThumbRadius * 2,
 
     "[data-is-progress-bar-hovered=true] &": {
@@ -84,7 +81,7 @@ export const progressBarTrackStyles = (theme: Theme) =>
     borderRadius: progressBarTrackHeight / 2,
     height: progressBarTrackHeight,
     position: "absolute",
-    transition: `transform ${transitionDuration} ${transitionTimingFunction}`,
+    transition: `transform ${theme.motion.playerControls.progressBar.transitionDuration} ${theme.motion.playerControls.progressBar.transitionTimingFunction}`,
     width: "100%",
 
     "[data-is-progress-bar-hovered=true] &": {
@@ -101,7 +98,7 @@ export const progressBarTrackFillStyles = (theme: Theme) =>
     height: progressBarTrackHeight,
     opacity: 0,
     position: "absolute",
-    transition: `opacity ${transitionDuration} ${transitionTimingFunction}`,
+    transition: `opacity ${theme.motion.playerControls.progressBar.transitionDuration} ${theme.motion.playerControls.progressBar.transitionTimingFunction}`,
 
     "[data-is-progress-bar-hovered=true] &": {
       opacity: 1,
@@ -112,7 +109,7 @@ export const buttonContainerStyles = css({
   alignItems: "center",
   display: "grid",
   gridTemplateColumns: "1fr auto 1fr",
-  marginBottom: 6,
+  marginBottom: 12,
   width: "100%",
 });
 
@@ -131,21 +128,28 @@ export const playButtonStyles = (theme: Theme) =>
     background: "transparent",
     border: "none",
     color: theme.colors.playerControls.button.color,
+    cursor: "pointer",
     fontSize: 48,
     lineHeight: 0,
     padding: 0,
+    transition: `color ${theme.motion.playerControls.button.transitionDuration} ${theme.motion.playerControls.button.transitionTimingFunction}`,
+
+    "&:hover": {
+      color: theme.colors.playerControls.button.foreground,
+    },
   });
 
-export const previewThumbnailContainerStyles = css({
-  bottom: "100%",
-  marginBottom: 8,
-  opacity: 0,
-  pointerEvents: "none",
-  position: "absolute",
-  transform: "translateX(-50%)",
-  transition: `opacity ${transitionDuration} ${transitionTimingFunction}`,
+export const previewThumbnailContainerStyles = (theme: Theme) =>
+  css({
+    bottom: "100%",
+    marginBottom: 8,
+    opacity: 0,
+    pointerEvents: "none",
+    position: "absolute",
+    transform: "translateX(-50%)",
+    transition: `opacity ${theme.motion.playerControls.progressBar.transitionDuration} ${theme.motion.playerControls.progressBar.transitionTimingFunction}`,
 
-  "[data-is-progress-bar-hovered=true] &": {
-    opacity: 1,
-  },
-});
+    "[data-is-progress-bar-hovered=true] &": {
+      opacity: 1,
+    },
+  });

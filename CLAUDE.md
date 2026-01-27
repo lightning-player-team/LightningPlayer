@@ -166,21 +166,7 @@ Helper functions: `getProgressPercentageFromEvent` (`src/ui-components/level-one
 
 ##### Preview thumbnail (`src/ui-components/base/preview-thumbnail/PreviewThumbnail.tsx`)
 
-Uses a pattern to avoid synchronous setState in effects (which causes cascading renders). Store metadata (timestamp) alongside async data (url), then compare in render:
-
-```tsx
-const [thumbnail, setThumbnail] = useState<
-  { timestamp: number; url: string } | undefined
->();
-
-// In effect: only set state when data arrives.
-setThumbnail({ timestamp, url });
-
-// In render: compare to decide what to show.
-const showImage = thumbnail && thumbnail.timestamp === timestamp;
-```
-
-When `timestamp` prop changes, the comparison immediately fails (showing placeholder) without needing a synchronous setState.
+Uses a pattern to avoid synchronous setState in effects (which causes cascading renders). Store timestamp alongside async data (url), then compare in render. When `timestamp` prop changes, the comparison immediately fails (showing placeholder) without needing a synchronous setState.
 
 Fetching of the thumbnail is expensive, and is done with `useDebouncedEffect`.
 

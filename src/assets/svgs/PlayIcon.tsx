@@ -1,18 +1,19 @@
 import { SVGProps } from "react";
 
+// FluentPlay48Regular
 export function PlayIcon(props: SVGProps<SVGSVGElement>) {
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
       width="1em"
       height="1em"
-      viewBox="0 0 20 20"
+      viewBox="0 0 48 48"
       {...props}
     >
       {/* Icon from Fluent UI System Icons by Microsoft Corporation - https://github.com/microsoft/fluentui-system-icons/blob/main/LICENSE */}
       <path
         fill="currentColor"
-        d="M9.125 7.184A.75.75 0 0 0 8 7.834v4.333a.75.75 0 0 0 1.125.65l4.125-2.384a.5.5 0 0 0 0-.866zM2 10a8 8 0 1 1 16 0a8 8 0 0 1-16 0m8-7a7 7 0 1 0 0 14a7 7 0 0 0 0-14"
+        d="m16.75 8.412l24.417 12.705a3.25 3.25 0 0 1 0 5.766L16.75 39.588A3.25 3.25 0 0 1 12 36.705v-25.41a3.25 3.25 0 0 1 4.549-2.98zm-1.154 2.218l-.11-.047a.75.75 0 0 0-.986.712v25.41a.75.75 0 0 0 1.096.665l24.417-12.705a.75.75 0 0 0 0-1.33z"
       />
     </svg>
   );
