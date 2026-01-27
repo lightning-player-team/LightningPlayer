@@ -6,8 +6,8 @@ import {
   useRef,
   useState,
 } from "react";
-import PauseIcon from "../../../assets/svgs/PauseIcon";
-import PlayIcon from "../../../assets/svgs/PlayIcon";
+import PauseIcon from "../../../assets/svgs/pause.svg?react";
+import PlayIcon from "../../../assets/svgs/play.svg?react";
 import { useDimensions } from "../../../shared/hooks/useDimensions";
 import { PreviewThumbnail } from "../../base/preview-thumbnail/PreviewThumbnail";
 import { thumbnailWidth } from "../../base/preview-thumbnail/PreviewThumbnail.styles";
@@ -80,7 +80,7 @@ export const PlayerControlOverlay: FC<IPlayerControlOverlayProps> = ({
   setProgress,
   volume,
 }) => {
-  const [isHovered, setIsHovered] = useState(false);
+  const [isHovered, setIsHovered] = useState(true);
   // HoverPercentage from 0 to 1. Undefined means not hovering.
   const [hoverPercentage, setHoverPercentage] = useState<number | undefined>(
     undefined,

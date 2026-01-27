@@ -13,6 +13,7 @@ declare module "@emotion/react" {
       playerControls: {
         button: {
           color: string;
+          foreground: string;
         };
         progressBar: {
           background: string;
@@ -55,6 +56,22 @@ declare module "@emotion/react" {
       };
       window: {
         background: string;
+      };
+    };
+    motion: {
+      playerControls: {
+        button: {
+          transitionDuration: string;
+          transitionTimingFunction: string;
+        };
+        overlay: {
+          transitionDuration: string;
+          transitionTimingFunction: string;
+        };
+        progressBar: {
+          transitionDuration: string;
+          transitionTimingFunction: string;
+        };
       };
     };
   }

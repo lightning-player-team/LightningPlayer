@@ -6,8 +6,10 @@ import {
   useRef,
   useState,
 } from "react";
-import { SpeakerIcon } from "../../../assets/svgs/SpeakerIcon";
-import { SpeakerMuteIcon } from "../../../assets/svgs/SpeakerMuteIcon";
+import Speaker0Icon from "../../../assets/svgs/speaker-0.svg?react";
+import Speaker1Icon from "../../../assets/svgs/speaker-1.svg?react";
+import Speaker2Icon from "../../../assets/svgs/speaker-2.svg?react";
+import SpeakerMuteIcon from "../../../assets/svgs/speaker-mute.svg?react";
 import { getVolumeFromEvent } from "./getVolumeFromEvent";
 import {
   containerStyles,
@@ -49,7 +51,6 @@ export const VolumeControl: FC<IVolumeControlProps> = ({
 
   const isExpanded = isHovered || isPinned;
   const thumbPosition = (isMuted ? 0 : volume) * (sliderWidth - thumbSize);
-  const VolumeIcon = isMuted ? SpeakerMuteIcon : SpeakerIcon;
 
   const handleMouseEnter = () => {
     setIsHovered(true);
@@ -88,6 +89,16 @@ export const VolumeControl: FC<IVolumeControlProps> = ({
     document.addEventListener("mouseup", handleMouseUp);
   };
 
+  /**
+   * Renders the appropriate speaker icon based on mute state and volume level.
+   */
+  const renderVolumeIcon = () => {
+    if (isMuted) return <SpeakerMuteIcon />;
+    if (volume === 0) return <Speaker0Icon />;
+    if (volume <= 0.5) return <Speaker1Icon />;
+    return <Speaker2Icon />;
+  };
+
   return (
     <div
       css={containerStyles}
@@ -101,7 +112,7 @@ export const VolumeControl: FC<IVolumeControlProps> = ({
         onClick={onMuteToggle}
         type="button"
       >
-        <VolumeIcon />
+        {renderVolumeIcon()}
       </button>
       <div
         css={sliderContainerStyles}

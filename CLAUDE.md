@@ -70,7 +70,7 @@ UI components in `src/ui-components/`:
 
 - Avoid hard casting as much as possible.
 
-- Lint before build.
+- Lint before build. No need to run `cd`.
 
 - All fields in objects, types, interfaces, enums, and function parameters are alphanumerically sorted. When doing this in styles files, CSS selectors (like &:hover, [data-...]) need to be kept at the end and retain their original order to preserve cascade behavior.
 
@@ -166,21 +166,7 @@ Helper functions: `getProgressPercentageFromEvent` (`src/ui-components/level-one
 
 ##### Preview thumbnail (`src/ui-components/base/preview-thumbnail/PreviewThumbnail.tsx`)
 
-Uses a pattern to avoid synchronous setState in effects (which causes cascading renders). Store metadata (timestamp) alongside async data (url), then compare in render:
-
-```tsx
-const [thumbnail, setThumbnail] = useState<
-  { timestamp: number; url: string } | undefined
->();
-
-// In effect: only set state when data arrives.
-setThumbnail({ timestamp, url });
-
-// In render: compare to decide what to show.
-const showImage = thumbnail && thumbnail.timestamp === timestamp;
-```
-
-When `timestamp` prop changes, the comparison immediately fails (showing placeholder) without needing a synchronous setState.
+Uses a pattern to avoid synchronous setState in effects (which causes cascading renders). Store timestamp alongside async data (url), then compare in render. When `timestamp` prop changes, the comparison immediately fails (showing placeholder) without needing a synchronous setState.
 
 Fetching of the thumbnail is expensive, and is done with `useDebouncedEffect`.
 

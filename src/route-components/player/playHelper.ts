@@ -169,7 +169,7 @@ export const playHelper = async ({
     // console.log(
     //   currentFrame?.timestamp,
     //   timestampInVideo,
-    //   (rafTimeStamp - startRafTimeStamp) / 1000
+    //   (rafTimeStamp - startRafTimeStamp) / 1000,
     // );
 
     if (currentFrame.timestamp <= timestampInVideo) {
