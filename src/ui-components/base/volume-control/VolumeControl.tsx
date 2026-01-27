@@ -6,10 +6,10 @@ import {
   useRef,
   useState,
 } from "react";
-import { Speaker0Icon } from "../../../assets/svgs/Speaker0Icon";
-import { Speaker1Icon } from "../../../assets/svgs/Speaker1Icon";
-import { Speaker2Icon } from "../../../assets/svgs/Speaker2Icon";
-import { SpeakerMuteIcon } from "../../../assets/svgs/SpeakerMuteIcon";
+import Speaker0Icon from "../../../assets/svgs/speaker-0.svg?react";
+import Speaker1Icon from "../../../assets/svgs/speaker-1.svg?react";
+import Speaker2Icon from "../../../assets/svgs/speaker-2.svg?react";
+import SpeakerMuteIcon from "../../../assets/svgs/speaker-mute.svg?react";
 import { getVolumeFromEvent } from "./getVolumeFromEvent";
 import {
   containerStyles,

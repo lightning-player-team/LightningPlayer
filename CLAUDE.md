@@ -70,7 +70,7 @@ UI components in `src/ui-components/`:
 
 - Avoid hard casting as much as possible.
 
-- Lint before build.
+- Lint before build. No need to run `cd`.
 
 - All fields in objects, types, interfaces, enums, and function parameters are alphanumerically sorted. When doing this in styles files, CSS selectors (like &:hover, [data-...]) need to be kept at the end and retain their original order to preserve cascade behavior.
 

@@ -113,6 +113,7 @@ export const buttonContainerStyles = css({
   alignItems: "center",
   display: "grid",
   gridTemplateColumns: "1fr auto 1fr",
+  marginTop: 8,
   marginBottom: 12,
   width: "100%",
 });
@@ -133,7 +134,7 @@ export const playButtonStyles = (theme: Theme) =>
     border: "none",
     color: theme.colors.playerControls.button.color,
     cursor: "pointer",
-    fontSize: 48,
+    fontSize: 36,
     lineHeight: 0,
     padding: 0,
     transition: `color ${theme.motion.playerControls.button.transitionDuration} ${theme.motion.playerControls.button.transitionTimingFunction}`,

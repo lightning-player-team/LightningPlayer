@@ -1,6 +1,6 @@
 import { useAtomValue } from "jotai";
 import { FC, MouseEventHandler, ReactNode, useRef } from "react";
-import CloseIcon from "../../../assets/svgs/CloseIcon";
+import CloseIcon from "../../../assets/svgs/close.svg?react";
 import { titleBarPinnedState } from "../../../shared/atoms/titleBarPinnedState";
 import { TITLE_BAR_HEIGHT } from "../title-bar/TitleBar.types";
 import {

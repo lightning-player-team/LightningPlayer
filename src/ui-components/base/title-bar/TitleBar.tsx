@@ -2,12 +2,12 @@ import { TauriEvent } from "@tauri-apps/api/event";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { useAtom } from "jotai";
 import { FC, useEffect, useRef, useState } from "react";
-import CloseIcon from "../../../assets/svgs/CloseIcon";
-import MaximizeIcon from "../../../assets/svgs/MaximizeIcon";
-import MinimizeIcon from "../../../assets/svgs/MinimizeIcon";
-import PinIcon from "../../../assets/svgs/PinIcon";
-import RestoreIcon from "../../../assets/svgs/RestoreIcon";
-import UnpinIcon from "../../../assets/svgs/UnpinIcon";
+import CloseIcon from "../../../assets/svgs/close.svg?react";
+import MaximizeIcon from "../../../assets/svgs/maximize.svg?react";
+import MinimizeIcon from "../../../assets/svgs/minimize.svg?react";
+import PinIcon from "../../../assets/svgs/pin.svg?react";
+import RestoreIcon from "../../../assets/svgs/restore.svg?react";
+import UnpinIcon from "../../../assets/svgs/unpin.svg?react";
 import { titleBarPinnedState } from "../../../shared/atoms/titleBarPinnedState";
 import {
   pinnedContainerStyles,
