@@ -64,6 +64,10 @@ declare module "@emotion/react" {
           transitionDuration: string;
           transitionTimingFunction: string;
         };
+        overlay: {
+          transitionDuration: string;
+          transitionTimingFunction: string;
+        };
         progressBar: {
           transitionDuration: string;
           transitionTimingFunction: string;

@@ -6,18 +6,22 @@ export const progressBarThumbRadius = 6;
 export const progressBarThumbExpandedRadius = 8;
 const progressBarContainerHeight = progressBarThumbExpandedRadius * 2;
 
-export const playerControlOverlayContainerStyles = css({
-  background: "transparent",
-  height: "100%",
-  left: 0,
-  opacity: 1,
-  position: "absolute",
-  top: 0,
-  width: "100%",
-  // "&[data-is-hovered=true]": {
-  //   opacity: 1,
-  // },
-});
+export const playerControlOverlayContainerStyles = (theme: Theme) =>
+  css({
+    background: "transparent",
+    height: "100%",
+    left: 0,
+    opacity: 0,
+    position: "absolute",
+    top: 0,
+    transition: `opacity ${theme.motion.playerControls.overlay.transitionDuration} ${
+      theme.motion.playerControls.overlay.transitionTimingFunction
+    }`,
+    width: "100%",
+    "&[data-is-hovered=true]": {
+      opacity: 1,
+    },
+  });
 
 export const bottomControlsContainerStyles = css({
   alignItems: "center",

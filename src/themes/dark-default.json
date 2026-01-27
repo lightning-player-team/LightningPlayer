@@ -61,6 +61,10 @@
         "transitionDuration": "0.4s",
         "transitionTimingFunction": "ease-in-out"
       },
+      "overlay": {
+        "transitionDuration": "0.4s",
+        "transitionTimingFunction": "ease-in-out"
+      },
       "progressBar": {
         "transitionDuration": "0.2s",
         "transitionTimingFunction": "ease-in-out"
