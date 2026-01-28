@@ -1,13 +1,7 @@
-import {
-  Dispatch,
-  FC,
-  MouseEventHandler,
-  SetStateAction,
-  useRef,
-  useState,
-} from "react";
+import { FC, MouseEventHandler, RefObject, useRef, useState } from "react";
 import PauseIcon from "../../../assets/svgs/pause.svg?react";
 import PlayIcon from "../../../assets/svgs/play.svg?react";
+import { updateProgressBarDOM } from "../../../route-components/player/updateProgressBarDOM";
 import { useDimensions } from "../../../shared/hooks/useDimensions";
 import { PreviewThumbnail } from "../../base/preview-thumbnail/PreviewThumbnail";
 import { thumbnailWidth } from "../../base/preview-thumbnail/PreviewThumbnail.styles";
@@ -39,6 +33,7 @@ export interface IPlayerControlOverlayProps {
    * @param timestamp in seconds. This component simply passes it to PreviewThumbnail.
    */
   getThumbnail: (timestamp: number) => Promise<string | undefined>;
+  isDraggingProgressBarRef: RefObject<boolean>;
   isMuted: boolean;
   isPlaying: boolean;
   onMuteToggle: () => void;
@@ -50,34 +45,30 @@ export interface IPlayerControlOverlayProps {
   /**
    * Time in seconds.
    */
-  play: (time: number) => Promise<void>;
+  play: () => void;
   /**
-   * Progress in seconds.
+   * Progress in seconds. Stored in ref for imperative DOM updates.
    */
-  progress: number;
+  progressRef: RefObject<number>;
   /**
    * Time in seconds.
    */
   seek(time: number): Promise<void>;
-  /**
-   * Set progress in seconds.
-   */
-  setProgress: Dispatch<SetStateAction<number>>;
   volume: number;
 }
 
 export const PlayerControlOverlay: FC<IPlayerControlOverlayProps> = ({
   duration,
   getThumbnail,
+  isDraggingProgressBarRef,
   isMuted,
   isPlaying,
   onMuteToggle,
   onVolumeChange,
   pause,
   play,
-  progress,
+  progressRef,
   seek,
-  setProgress,
   volume,
 }) => {
   const [isHovered, setIsHovered] = useState(true);
@@ -91,13 +82,11 @@ export const PlayerControlOverlay: FC<IPlayerControlOverlayProps> = ({
   const [isVolumePinned, setIsVolumePinned] = useState(false);
   const progressBarContainerRef = useRef<HTMLDivElement>(null);
   const progressBarContainerDimensions = useDimensions(progressBarContainerRef);
-  // Percentage from 0 to 1.
-  const progressPercentage = progress / duration;
 
   const handleOnClickPlayButton = () => {
     setIsVolumePinned(false);
     if (!isPlaying) {
-      play(progress);
+      play();
     } else {
       pause();
     }
@@ -134,9 +123,8 @@ export const PlayerControlOverlay: FC<IPlayerControlOverlayProps> = ({
       progressBarContainerRef,
     });
     console.log(
-      `Seeking started at: percentage ${progressPercentage}, progress ${newProgress}`,
+      `Seeking started at: percentage ${progressRef.current / duration}, progress ${newProgress}`,
     );
-    setProgress(newProgress);
 
     if (isPlaying) {
       pause();
@@ -150,9 +138,11 @@ export const PlayerControlOverlay: FC<IPlayerControlOverlayProps> = ({
         progressBarContainerRef,
       });
       console.log(
-        `Seeking moving at: percentage ${progressPercentage}, progress ${newProgress}`,
+        `Seeking moving at: percentage ${progressRef.current / duration}, progress ${newProgress}`,
       );
-      setProgress(newProgress);
+      progressRef.current = newProgress;
+      updateProgressBarDOM({ duration, progress: newProgress });
+      isDraggingProgressBarRef.current = true;
     };
 
     const handleMouseUp = (e: MouseEvent) => {
@@ -163,10 +153,11 @@ export const PlayerControlOverlay: FC<IPlayerControlOverlayProps> = ({
       });
       console.log("Seeking ended.");
 
+      seek(newProgress);
+      isDraggingProgressBarRef.current = false;
+
       if (isPlaying) {
-        play(newProgress);
-      } else {
-        seek(newProgress);
+        play();
       }
 
       document.removeEventListener("mousemove", handleMouseMove);
@@ -239,22 +230,8 @@ export const PlayerControlOverlay: FC<IPlayerControlOverlayProps> = ({
               ]}
             />
           </div>
-          <div
-            css={[
-              progressBarCurrentStyles,
-              {
-                width: `${progressPercentage * 100}%`,
-              },
-            ]}
-          ></div>
-          <div
-            css={[
-              progressbarThumbStyles,
-              {
-                translate: `${progressPercentage * 100}cqw`,
-              },
-            ]}
-          />
+          <div css={progressBarCurrentStyles} id="progress-bar-current"></div>
+          <div css={progressbarThumbStyles} id="progress-bar-thumb" />
         </div>
         {/* Button controls */}
         <div css={buttonContainerStyles}>
