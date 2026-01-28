@@ -6,6 +6,14 @@ import { PlaybackClock } from "./PlaybackClock";
 
 /**
  * Iterates over the video frame iterator until it finds a video frame in the future.
+ *
+ * @param asyncIdRef - Ref to track async operation validity. If the value changes during
+ *   iteration, the function exits early to prevent stale updates.
+ * @param ctx - Canvas 2D rendering context.
+ * @param nextFrameRef - Ref to store the next frame for the render loop.
+ * @param playbackClock - PlaybackClock instance for timing.
+ * @param screenDimensions - Current screen dimensions for drawing.
+ * @param videoFrameIterator - The video frame async iterator to read from.
  */
 export const updateNextFrame = async ({
   asyncIdRef,
@@ -13,18 +21,16 @@ export const updateNextFrame = async ({
   nextFrameRef,
   playbackClock,
   screenDimensions,
-  videoFrameIteratorRef,
+  videoFrameIterator,
 }: {
   asyncIdRef: RefObject<number>;
   ctx: CanvasRenderingContext2D;
   nextFrameRef: RefObject<WrappedCanvas | undefined>;
   playbackClock: PlaybackClock;
   screenDimensions: IDimensions;
-  videoFrameIteratorRef: RefObject<
-    AsyncGenerator<WrappedCanvas, void, unknown> | undefined
-  >;
+  videoFrameIterator: AsyncGenerator<WrappedCanvas, void, unknown> | undefined;
 }) => {
-  if (!videoFrameIteratorRef.current) {
+  if (!videoFrameIterator) {
     console.error("updateNextFrame: videoFrameIterator not initialized.");
     return;
   }
@@ -33,8 +39,7 @@ export const updateNextFrame = async ({
 
   // We have a loop here because we may need to iterate over multiple frames until we reach a frame in the future.
   while (true) {
-    const newNextFrame =
-      (await videoFrameIteratorRef.current.next()).value ?? null;
+    const newNextFrame = (await videoFrameIterator.next()).value;
     if (!newNextFrame) {
       break;
     }

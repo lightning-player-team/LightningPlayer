@@ -1,5 +1,4 @@
 import { WrappedAudioBuffer } from "mediabunny";
-import { RefObject } from "react";
 import { PlaybackClock } from "./PlaybackClock";
 
 /**
@@ -7,29 +6,34 @@ import { PlaybackClock } from "./PlaybackClock";
  *
  * This function iterates over audio buffers from mediabunny and schedules them
  * for playback using AudioBufferSourceNode. It handles:
- * - Throttling when too far ahead (>1 second buffered)
- * - Scheduling future buffers with precise timing
- * - Playing partially elapsed buffers from the correct offset
+ * - Throttling when too far ahead (>1 second buffered).
+ * - Scheduling future buffers with precise timing.
+ * - Playing partially elapsed buffers from the correct offset.
+ *
+ * @param audioBufferIterator - The audio buffer async iterator to read from.
+ * @param gainNode - GainNode to connect audio sources to.
+ * @param playbackClock - PlaybackClock instance for timing.
+ * @param queuedAudioNodes - Set to track scheduled AudioBufferSourceNodes for cleanup.
  */
 export const runAudioIterator = async ({
-  audioBufferIteratorRef,
+  audioBufferIterator,
   gainNode,
   playbackClock,
-  queuedAudioNodesRef,
+  queuedAudioNodes,
 }: {
-  audioBufferIteratorRef: RefObject<
-    AsyncGenerator<WrappedAudioBuffer, void, unknown> | undefined
-  >;
+  audioBufferIterator:
+    | AsyncGenerator<WrappedAudioBuffer, void, unknown>
+    | undefined;
   gainNode: GainNode;
   playbackClock: PlaybackClock;
-  queuedAudioNodesRef: RefObject<Set<AudioBufferSourceNode>>;
+  queuedAudioNodes: Set<AudioBufferSourceNode>;
 }): Promise<void> => {
   if (playbackClock.audioContextTimeAtPlayStart === undefined) {
     console.error("runAudioIterator: audioContextTimeAtPlayStart is undefined");
     return;
   }
-  if (!audioBufferIteratorRef.current) {
-    console.error("runAudioIterator: audioBufferIteratorRef is undefined");
+  if (!audioBufferIterator) {
+    console.error("runAudioIterator: audioBufferIterator is undefined");
     return;
   }
 
@@ -39,7 +43,7 @@ export const runAudioIterator = async ({
   // of the file and play them at the correct timestamp.
   // The result is a continuous, uninterrupted audio signal.
   // console.log("runAudioIterator: starting audio loop");
-  for await (const { buffer, timestamp } of audioBufferIteratorRef.current) {
+  for await (const { buffer, timestamp } of audioBufferIterator) {
     // Schedule audio buffer.
     const node = audioContext.createBufferSource();
     node.buffer = buffer;
@@ -61,9 +65,9 @@ export const runAudioIterator = async ({
       node.start(audioContext.currentTime, currentTimestamp - timestamp);
     }
 
-    queuedAudioNodesRef.current.add(node);
+    queuedAudioNodes.add(node);
     node.onended = () => {
-      queuedAudioNodesRef.current.delete(node);
+      queuedAudioNodes.delete(node);
     };
 
     // Throttle if too far ahead (>1 second buffered).

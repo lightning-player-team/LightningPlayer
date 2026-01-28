@@ -104,53 +104,60 @@ Provides Emotion ThemeProvider, global styles, and Tauri-specific components (Ti
 
 Uses mediabunny for video decoding and Web Audio API for audio playback:
 
-1. Creates `Input` from file blob with `BlobSource`
-2. Gets video/audio tracks via `getVideoTracks()` / `getAudioTracks()`
-3. Creates `CanvasSink` for video frames and `AudioBufferSink` for audio buffers
-4. Audio: Schedules `AudioBufferSourceNode` instances via `playAudio.ts`
-5. Video: Renders frames to canvas via `requestAnimationFrame` loop
+1. Creates `Input` from file blob with `BlobSource`.
+2. Gets video/audio tracks via `getVideoTracks()` / `getAudioTracks()`.
+3. Creates `CanvasSink` for video frames and `AudioBufferSink` for audio buffers.
+4. Audio: Schedules `AudioBufferSourceNode` instances via `runAudioIterator`.
+5. Video: Renders frames to canvas via `requestAnimationFrame` loop.
 
-#### Video playback (`src/route-components/player/playHelper.ts`)
+#### PlaybackClock (`src/route-components/player/PlaybackClock.ts`)
 
-Uses `AudioContext.currentTime` as the master clock for A/V sync:
+Manages playback timing using `AudioContext` as the master clock for A/V sync:
 
-1. Sets `isPlayingRef.current = true` immediately to signal playback has started.
-2. Creates async iterator from `CanvasSink.canvases(time)`.
-3. Stores iterator in `canvasIteratorRef` for cleanup on pause.
-4. Runs `requestAnimationFrame` loop (`playLoop`) that:
-   - Checks `isPlayingRef.current` to exit if paused.
-   - Calculates current timestamp from `audioContext.currentTime - audioContextStartTime + time`.
-   - If current frame's timestamp <= current time, draws it and fetches next frame.
-   - `getNextFrame` skips frames if video fps exceeds display refresh rate.
+- `timestampAtPlayStart`: The video timestamp we're measuring from (set on play/pause/seek).
+- `audioContextTimeAtPlayStart`: The `AudioContext.currentTime` when `play()` was called.
+- `currentTime`: Returns `timestampAtPlayStart + (audioContext.currentTime - audioContextTimeAtPlayStart)` when playing, or just `timestampAtPlayStart` when paused.
 
-**Async cancellation pattern:** JavaScript context-switches only at `await` points. After each `await` (e.g., `audioContext.resume()`, `canvasIterator.next()`), check `isPlayingRef.current` - if false, pause was called during the async operation, so discard the result and return early.
+Both audio and video playback rely on `PlaybackClock.currentTime` to achieve synchronized play, pause, and seek.
 
-**Cleanup:** `pauseAndCleanUp` sets `isPlayingRef.current = false` first, then disposes iterators via `canvasIteratorRef.current?.return()`. When pending async operations complete, their code checks `isPlayingRef.current`, sees it's false, and returns without using the result.
+#### Video playback
 
-#### Audio playback (`src/route-components/player/playAudio.ts`)
+**startVideoIterator (`src/route-components/player/startVideoIterator.ts`)**: Creates a new video frame iterator from `CanvasSink.canvases(time)`, fetches the first two frames, draws the first frame immediately, and stores the second in `nextFrameRef` for the render loop.
+
+**updateNextFrame (`src/route-components/player/updateNextFrame.ts`)**: Called by the render loop when it's time for the next frame. Iterates over the video frame iterator, drawing any frames whose timestamp has passed, and stores the first future frame in `nextFrameRef`. Uses `asyncIdRef` to detect stale async operations from previous seeks.
+
+**Render loop** (in `Player.tsx`): A `requestAnimationFrame` loop that:
+
+1. Gets current playback time from `PlaybackClock.currentTime`.
+2. If `nextFrameRef.current.timestamp <= playbackTime`, draws it and calls `updateNextFrame`.
+3. Updates the progress bar DOM imperatively via `updateProgressBarDOM`.
+
+#### Audio playback (`src/route-components/player/runAudioIterator.ts`)
 
 Schedules audio buffers using Web Audio API:
 
-1. Creates async iterator from `AudioBufferSink.buffers(time)`.
+1. Iterates over `AudioBufferSink.buffers(time)`.
 2. For each buffer, creates `AudioBufferSourceNode` and connects to `GainNode`.
 3. Schedules playback:
-   - Future buffers: `node.start(audioContextStartTime + timestamp - time)`.
+   - Future buffers: `node.start(audioContextTimeAtPlayStart + timestamp - timestampAtPlayStart)`.
    - Past buffers (partially elapsed): `node.start(audioContext.currentTime, offset)`.
 4. Throttles when >1 second buffered ahead.
-5. Tracks scheduled nodes in `queuedAudioNodesRef` Set (added after `start()`, removed on `ended`).
+5. Tracks scheduled nodes in `queuedAudioNodes` Set (added after `start()`, removed on `ended`).
 
-**Cleanup:** All nodes in `queuedAudioNodesRef` are stopped via `node.stop()`. `audioIteratorRef.current?.return()` releases iterator. `audioContextRef.current?.suspend()` stops scheduled audio.
+**Cleanup:** All nodes in `queuedAudioNodes` are stopped via `node.stop()`. `audioBufferIteratorRef.current?.return()` releases iterator. `audioContextRef.current?.suspend()` stops scheduled audio.
+
+#### Progress bar DOM updates (`src/route-components/player/updateProgressBarDOM.ts`)
+
+Imperatively updates the progress bar elements by ID (`progress-bar-current`, `progress-bar-thumb`) to avoid React re-renders on every frame during playback.
 
 #### Player controls (`src/ui-components/level-one/player-control-overlay/PlayerControlOverlay.tsx`)
 
 Shows/hides on hover. Contains: progress bar with preview thumbnail, play/pause button, and volume control.
 
-##### Seeking (`src/route-components/player/seekHelper.ts`)
+##### Seeking
 
-- **Paused seek**: Calls `seekHelper` to draw a single frame at the new position without starting playback.
+- **Paused seek**: Calls `seek()` which updates `PlaybackClock`, then calls `startVideoIterator` to draw a single frame at the new position without starting playback.
 - **Playing seek**: Pauses playback first (stops all queued audio nodes), then resumes at the new position.
-
-`seekHelper` fallbacks to the first frame when the video CanvasSink fails to return a canvas (this can happen when, e.g., user seeks to 0 second which is before every frame).
 
 ##### Volume control (`src/ui-components/base/volume-control/VolumeControl.tsx`)
 

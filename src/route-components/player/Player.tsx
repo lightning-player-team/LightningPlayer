@@ -113,10 +113,10 @@ export const Player: FC = () => {
         playbackClockRef.current.currentTime,
       );
       void runAudioIterator({
-        audioBufferIteratorRef,
+        audioBufferIterator: audioBufferIteratorRef.current,
         gainNode: gainNodeRef.current,
         playbackClock: playbackClockRef.current,
-        queuedAudioNodesRef,
+        queuedAudioNodes: queuedAudioNodesRef.current,
       });
     }
   };
@@ -384,7 +384,7 @@ export const Player: FC = () => {
             nextFrameRef,
             playbackClock: playbackClockRef.current,
             screenDimensions: screenDimensionsRef.current,
-            videoFrameIteratorRef,
+            videoFrameIterator: videoFrameIteratorRef.current,
           });
         }
 
