@@ -41,7 +41,7 @@ export const Player: FC = () => {
   const gainNodeRef = useRef<GainNode>(undefined);
 
   // Controls the playback loop and allows pausing.
-  const playRAFRef = useRef<number>(undefined);
+  const isPlayingRef = useRef(false);
   // Used by PlayerControlOverlay to toggle play/pause button.
   const [isPlaying, setIsPlaying] = useState(false);
 
@@ -108,7 +108,7 @@ export const Player: FC = () => {
         ctx,
         duration,
         gainNode: gainNodeRef.current,
-        playRAFRef,
+        isPlayingRef,
         queuedAudioNodesRef,
         screenDimensionsRef,
         setIsPlaying,
@@ -120,9 +120,7 @@ export const Player: FC = () => {
   );
 
   const pauseAndCleanUp = () => {
-    if (playRAFRef.current) {
-      cancelAnimationFrame(playRAFRef.current);
-    }
+    isPlayingRef.current = false;
     // Stop all audio nodes that were already queued to play
     for (const node of queuedAudioNodesRef.current) {
       node.stop();
