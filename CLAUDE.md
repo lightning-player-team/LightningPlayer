@@ -114,15 +114,18 @@ Uses mediabunny for video decoding and Web Audio API for audio playback:
 
 Uses `AudioContext.currentTime` as the master clock for A/V sync:
 
-1. Creates async iterator from `CanvasSink.canvases(time)`.
-2. Stores iterator in `canvasIteratorRef` for cleanup on pause.
-3. Runs `requestAnimationFrame` loop (`playLoop`) that:
+1. Sets `isPlayingRef.current = true` immediately to signal playback has started.
+2. Creates async iterator from `CanvasSink.canvases(time)`.
+3. Stores iterator in `canvasIteratorRef` for cleanup on pause.
+4. Runs `requestAnimationFrame` loop (`playLoop`) that:
+   - Checks `isPlayingRef.current` to exit if paused.
    - Calculates current timestamp from `audioContext.currentTime - audioContextStartTime + time`.
    - If current frame's timestamp <= current time, draws it and fetches next frame.
    - `getNextFrame` skips frames if video fps exceeds display refresh rate.
-4. Stores RAF ID in `playRAFRef` for cancellation.
 
-**Cleanup:** `cancelAnimationFrame(playRAFRef.current)` stops the loop. `canvasIteratorRef.current?.return()` releases iterator resources.
+**Async cancellation pattern:** JavaScript context-switches only at `await` points. After each `await` (e.g., `audioContext.resume()`, `canvasIterator.next()`), check `isPlayingRef.current` - if false, pause was called during the async operation, so discard the result and return early.
+
+**Cleanup:** `pauseAndCleanUp` sets `isPlayingRef.current = false` first, then disposes iterators via `canvasIteratorRef.current?.return()`. When pending async operations complete, their code checks `isPlayingRef.current`, sees it's false, and returns without using the result.
 
 #### Audio playback (`src/route-components/player/playAudio.ts`)
 

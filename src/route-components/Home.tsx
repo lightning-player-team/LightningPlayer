@@ -23,7 +23,7 @@ export const Home: FC = () => {
     openFileInputRef.current?.click();
   };
   const handleOnChangeFileInput: React.ChangeEventHandler<HTMLInputElement> = (
-    event
+    event,
   ) => {
     const files = event.target.files;
     if (files && files.length) {

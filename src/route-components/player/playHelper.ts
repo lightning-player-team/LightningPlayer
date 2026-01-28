@@ -18,8 +18,6 @@ import { playAudio } from "./playAudio";
  * 3. Running audio scheduling in parallel via playAudio
  * 4. Running a requestAnimationFrame loop for video rendering
  *
- * The playLoop's RAF id is stored in playRAFRef, which allows cancellation.
- *
  * @param audioContext - AudioContext for calculating timing and audio playback
  * @param audioBufferIteratorRef - Ref to store audio iterator for cleanup on pause
  * @param canvasIteratorRef - Ref to store the frame iterator - for cleanup on pause
@@ -29,7 +27,7 @@ import { playAudio } from "./playAudio";
  * @param ctx - Canvas 2D rendering context
  * @param duration - Total video duration in seconds (for end-of-video detection)
  * @param gainNode - GainNode for volume control
- * @param playRAFRef - Ref to store requestAnimationFrame ID for cancellation/pause
+ * @param isPlayingRef - Ref to current playback status and ensure proper exiting.
  * @param screenDimensionsRef - Ref to current screen dimensions - for resize handling
  * @param setIsPlaying - State setter for playback status
  * @param setProgress - State setter for playback progress in seconds
@@ -45,7 +43,7 @@ export const playHelper = async ({
   ctx,
   duration,
   gainNode,
-  playRAFRef,
+  isPlayingRef,
   queuedAudioNodesRef,
   screenDimensionsRef,
   setIsPlaying,
@@ -65,18 +63,21 @@ export const playHelper = async ({
   ctx: CanvasRenderingContext2D;
   duration: number;
   gainNode?: GainNode;
-  playRAFRef: RefObject<number | undefined>;
+  isPlayingRef: RefObject<boolean>;
   queuedAudioNodesRef: RefObject<Set<AudioBufferSourceNode>>;
   screenDimensionsRef: RefObject<IDimensions | undefined>;
   setIsPlaying: Dispatch<SetStateAction<boolean>>;
   setProgress: Dispatch<SetStateAction<number>>;
   time: number;
 }): Promise<void> => {
-  console.log(`play: started for ${time}`);
   if (!currentVideoSink) {
     console.log("Error playing: no currentVideoSink.");
     return;
   }
+
+  console.log(`play: started for ${time}`);
+  setIsPlaying(true);
+  isPlayingRef.current = true;
 
   /**
    * Playing audio and setting up timer, as video playback is based on the AudioContext's
@@ -86,6 +87,12 @@ export const playHelper = async ({
   // Resume audio context if suspended (browser autoplay policy).
   if (audioContext.state === "suspended") {
     await audioContext.resume();
+    // Possible context switch point: playback may be paused during
+    // async call. Check isPlayingRef before proceeding.
+    if (!isPlayingRef.current) {
+      console.log("playHelper: returning due to pause.");
+      return;
+    }
   }
 
   // Capture timing values at playback start.
@@ -118,6 +125,12 @@ export const playHelper = async ({
 
   const firstFrame = (await canvasIterator.next()).value;
   if (!firstFrame) {
+    // Possible context switch point: playback may be paused during
+    // async call. Check isPlayingRef before proceeding.
+    if (!isPlayingRef.current) {
+      console.log("playHelper: stopping playback loop.");
+      return;
+    }
     console.error("Error playing: no start frame.");
     return;
   }
@@ -128,6 +141,12 @@ export const playHelper = async ({
     // higher than what the webview can handle.
     while (true) {
       const nextFrame = (await canvasIterator.next()).value;
+      // Possible context switch point: playback may be paused during
+      // async call. Check isPlayingRef before proceeding.
+      if (!isPlayingRef.current) {
+        console.log("getNextFrame: stopping playback loop.");
+        return;
+      }
       if (!nextFrame) {
         console.log("getNextFrame: no next frame.");
         return;
@@ -140,37 +159,34 @@ export const playHelper = async ({
     }
   };
 
-  let startRafTimeStamp: number | undefined = undefined;
-  const playLoop = (rafTimeStamp: number) => {
+  const playLoop = () => {
+    if (!isPlayingRef.current) {
+      console.log("playLoop: stopping playback loop.");
+      return;
+    }
+
     const currentFrame = currentFrameRef.current;
 
     // Calculate current playback position.
     const timestampInVideo =
       audioContext.currentTime - audioContextStartTime + time;
-    // Only comparing this for logging purposes.
-    if (!startRafTimeStamp) {
-      startRafTimeStamp = rafTimeStamp;
-    }
 
     if (!currentFrame) {
       if (timestampInVideo >= duration) {
         console.log("playLoop: playback finished: no next frame.");
         setIsPlaying(false);
+        isPlayingRef.current = false;
         return;
       } else {
         console.log(
           "Waiting for getNextFrame to resolve, skipping animation frame...",
         );
-        playRAFRef.current = requestAnimationFrame(playLoop);
+        requestAnimationFrame(playLoop);
         return;
       }
     }
 
-    // console.log(
-    //   currentFrame?.timestamp,
-    //   timestampInVideo,
-    //   (rafTimeStamp - startRafTimeStamp) / 1000,
-    // );
+    console.log(currentFrame?.timestamp, timestampInVideo);
 
     if (currentFrame.timestamp <= timestampInVideo) {
       const screenDimensions = screenDimensionsRef.current;
@@ -189,10 +205,8 @@ export const playHelper = async ({
       currentFrameRef.current = undefined;
       getNextFrame(timestampInVideo);
     }
-    playRAFRef.current = requestAnimationFrame(playLoop);
+    requestAnimationFrame(playLoop);
   };
 
-  setIsPlaying(true);
   requestAnimationFrame(playLoop);
-  console.log("play: started.");
 };
