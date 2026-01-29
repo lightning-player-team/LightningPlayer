@@ -40,7 +40,7 @@ const DEFAULT_CONFIG: IPreviewThumbnailCacheConfig = {
  * LRU cache for video thumbnails with memory-based eviction and background auto-fill.
  */
 export class PreviewThumbnailCache {
-  private autoFillCancelled = false;
+  private autoFillCancelled = true;
   // Map maintains insertion order; we move accessed items to end for LRU behavior.
   private cache = new Map<number, ICachedThumbnail>();
   private config: IPreviewThumbnailCacheConfig;
@@ -152,37 +152,63 @@ export class PreviewThumbnailCache {
   }
 
   /**
-   * Starts background auto-fill of thumbnails.
-   *
-   * @param params - Parameters for auto-fill.
-   */
-  startAutoFill({
-    duration,
-    videoSink,
-  }: {
-    duration: number;
-    videoSink: CanvasSink;
-  }): void {
-    if (this.config.fillMode === "none") {
-      console.log("PreviewThumbnailCache: auto-fill disabled (fillMode: none)");
-      return;
-    }
-
-    this.stopAutoFill();
-    this.autoFillCancelled = false;
-
-    console.log(
-      `PreviewThumbnailCache: starting auto-fill (interval: ${this.config.fillIntervalSeconds}s, duration: ${formatTimestamp(duration)})`,
-    );
-
-    this.runAutoFill({ duration, videoSink });
-  }
-
-  /**
    * Stops the background auto-fill process.
    */
   stopAutoFill(): void {
     this.autoFillCancelled = true;
+  }
+
+  /**
+   * Runs the auto-fill process, fetching thumbnails sequentially.
+   *
+   * @param params - Parameters for auto-fill.
+   */
+  async runAutoFill({
+    duration,
+    timestamp,
+    videoSink,
+  }: {
+    duration: number;
+    timestamp: number;
+    videoSink: CanvasSink;
+  }): Promise<void> {
+    this.autoFillCancelled = false;
+    const interval = this.config.fillIntervalSeconds;
+    let fetchedCount = 0;
+
+    while (timestamp <= duration && !this.autoFillCancelled) {
+      // Stop if memory limit reached.
+      if (this.totalMemoryBytes >= this.config.maxMemoryBytes) {
+        console.log(
+          `PreviewThumbnailCache: auto-fill stopped at ${formatTimestamp(timestamp)} (memory limit reached: ${(this.totalMemoryBytes / 1024 / 1024).toFixed(1)}MB)`,
+        );
+        return;
+      }
+
+      // Skip if already cached.
+      if (!this.has(timestamp)) {
+        const success = await this.fetchAndCache(timestamp, videoSink);
+        if (success) {
+          fetchedCount++;
+          if (fetchedCount % 60 === 0) {
+            console.log(
+              `PreviewThumbnailCache: auto-fill progress ${formatTimestamp(timestamp)} / ${formatTimestamp(duration)} (${fetchedCount} thumbnails, ${(this.totalMemoryBytes / 1024 / 1024).toFixed(1)}MB)`,
+            );
+          }
+        }
+      }
+
+      timestamp += interval;
+
+      // Yield to main thread to prevent blocking.
+      await this.yieldToMainThread(0);
+    }
+
+    if (!this.autoFillCancelled) {
+      console.log(
+        `PreviewThumbnailCache: auto-fill complete (${fetchedCount} thumbnails, ${(this.totalMemoryBytes / 1024 / 1024).toFixed(1)}MB)`,
+      );
+    }
   }
 
   /**
@@ -229,57 +255,6 @@ export class PreviewThumbnailCache {
         error,
       );
       return false;
-    }
-  }
-
-  /**
-   * Runs the auto-fill process, fetching thumbnails sequentially.
-   *
-   * @param params - Parameters for auto-fill.
-   */
-  private async runAutoFill({
-    duration,
-    videoSink,
-  }: {
-    duration: number;
-    videoSink: CanvasSink;
-  }): Promise<void> {
-    const interval = this.config.fillIntervalSeconds;
-    let timestamp = 0;
-    let fetchedCount = 0;
-
-    while (timestamp <= duration && !this.autoFillCancelled) {
-      // Stop if memory limit reached.
-      if (this.totalMemoryBytes >= this.config.maxMemoryBytes) {
-        console.log(
-          `PreviewThumbnailCache: auto-fill stopped at ${formatTimestamp(timestamp)} (memory limit reached: ${(this.totalMemoryBytes / 1024 / 1024).toFixed(1)}MB)`,
-        );
-        return;
-      }
-
-      // Skip if already cached.
-      if (!this.has(timestamp)) {
-        const success = await this.fetchAndCache(timestamp, videoSink);
-        if (success) {
-          fetchedCount++;
-          if (fetchedCount % 60 === 0) {
-            console.log(
-              `PreviewThumbnailCache: auto-fill progress ${formatTimestamp(timestamp)} / ${formatTimestamp(duration)} (${fetchedCount} thumbnails, ${(this.totalMemoryBytes / 1024 / 1024).toFixed(1)}MB)`,
-            );
-          }
-        }
-      }
-
-      timestamp += interval;
-
-      // Yield to main thread to prevent blocking.
-      await this.yieldToMainThread(0);
-    }
-
-    if (!this.autoFillCancelled) {
-      console.log(
-        `PreviewThumbnailCache: auto-fill complete (${fetchedCount} thumbnails, ${(this.totalMemoryBytes / 1024 / 1024).toFixed(1)}MB)`,
-      );
     }
   }
 

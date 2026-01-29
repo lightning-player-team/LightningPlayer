@@ -182,6 +182,7 @@ export const Player: FC = () => {
       updateProgressBarDOM({ duration, progress: time });
 
       playbackClockRef.current.seek(time);
+      thumbnailCacheRef.current?.stopAutoFill();
       await startVideoIterator({
         asyncIdRef,
         ctx,
@@ -191,8 +192,15 @@ export const Player: FC = () => {
         videoFrameIteratorRef,
         videoSink: currentVideoSink,
       });
+      if (previewThumbnailVideoSink) {
+        thumbnailCacheRef.current?.runAutoFill({
+          duration,
+          timestamp: time,
+          videoSink: previewThumbnailVideoSink,
+        });
+      }
     },
-    [currentVideoSink, duration],
+    [currentVideoSink, duration, previewThumbnailVideoSink],
   );
 
   // Initializing screenDimensionsRef.
@@ -311,10 +319,11 @@ export const Player: FC = () => {
         // Initialize thumbnail cache and start auto-fill.
         const thumbnailCache = new PreviewThumbnailCache();
         thumbnailCacheRef.current = thumbnailCache;
-        thumbnailCache.startAutoFill({
-          duration,
-          videoSink: thumbnailVideoSink,
-        });
+        // thumbnailCache.runAutoFill({
+        //   duration,
+        //   timestamp: 0,
+        //   videoSink: thumbnailVideoSink,
+        // });
 
         setCurrentAudioSink(audioSink);
         setPreviewThumbnailVideoSink(thumbnailVideoSink);
@@ -425,6 +434,10 @@ export const Player: FC = () => {
       }
     };
     render();
+
+    // Also call the render function on an interval to make sure the video keeps
+    // updating even if the tab isn't visible.
+    setInterval(() => render(false), 500);
 
     return () => {
       cancelled = true;

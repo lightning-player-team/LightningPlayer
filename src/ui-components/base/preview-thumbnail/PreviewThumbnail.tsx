@@ -2,7 +2,9 @@ import { FC, useEffect, useRef, useState } from "react";
 import { formatTimestamp } from "../../../shared/utils/formatTimestamp";
 import {
   containerStyles,
-  placeholderStyles,
+  loadingDotStyles,
+  loadingOverlayStyles,
+  thumbnailContainerStyles,
   thumbnailStyles,
   timestampStyles,
 } from "./PreviewThumbnail.styles";
@@ -25,28 +27,22 @@ export const PreviewThumbnail: FC<IPreviewThumbnailProps> = ({
   timestamp,
 }) => {
   const imgRef = useRef<HTMLImageElement>(null);
-  // Track the rounded timestamp that's currently displayed.
-  const displayedTimestampRef = useRef<number | undefined>(undefined);
   // Track if image has loaded successfully.
-  const [hasImage, setHasImage] = useState(false);
+  const [currentThumbnailTimestamp, setCurrentThumbnailTimestamp] = useState<
+    number | undefined
+  >(undefined);
+  const roundedTimestamp = Math.round(timestamp);
 
   // Fetch thumbnail when timestamp changes (debounced).
   // useDebouncedEffect(fetchThumbnail, THUMBNAIL_DEBOUNCE_MS);
   useEffect(() => {
     let cancelled = false;
     const fetch = async () => {
-      const roundedTimestamp = Math.round(timestamp);
-
-      // Skip if already displaying this timestamp.
-      if (displayedTimestampRef.current === roundedTimestamp) {
-        return;
-      }
-
       if (cancelled) {
         return;
       }
 
-      const url = await getThumbnail(timestamp);
+      const url = await getThumbnail(roundedTimestamp);
 
       if (cancelled) {
         return;
@@ -55,7 +51,9 @@ export const PreviewThumbnail: FC<IPreviewThumbnailProps> = ({
       if (url && imgRef.current) {
         // Update img src imperatively - no React state delay.
         imgRef.current.src = url;
-        displayedTimestampRef.current = roundedTimestamp;
+        imgRef.current.onload = () => {
+          setCurrentThumbnailTimestamp(roundedTimestamp);
+        };
       }
     };
     fetch();
@@ -63,30 +61,31 @@ export const PreviewThumbnail: FC<IPreviewThumbnailProps> = ({
     return () => {
       cancelled = true;
     };
-  }, [getThumbnail, timestamp]);
+  }, [getThumbnail, roundedTimestamp]);
 
-  // Note: URL lifecycle is managed by ThumbnailCache, not this component.
-
-  const handleImageLoad = () => {
-    setHasImage(true);
+  const handleError = () => {
+    setCurrentThumbnailTimestamp(undefined);
   };
 
-  const handleImageError = () => {
-    setHasImage(false);
-  };
+  const isLoading = currentThumbnailTimestamp !== roundedTimestamp;
 
   return (
     <div css={containerStyles}>
-      {/* Always render img, hide via CSS when not loaded */}
-      <img
-        alt="Preview"
-        css={[thumbnailStyles, { display: hasImage ? "block" : "none" }]}
-        onError={handleImageError}
-        onLoad={handleImageLoad}
-        ref={imgRef}
-      />
-      {!hasImage && <div css={placeholderStyles} />}
-      <span css={timestampStyles}>{formatTimestamp(timestamp)}</span>
+      <div css={thumbnailContainerStyles}>
+        {/* Always render img, hide via CSS when not loaded. */}
+        <img
+          alt="Preview"
+          css={thumbnailStyles}
+          onError={handleError}
+          ref={imgRef}
+        />
+        <div css={loadingOverlayStyles} data-loading={isLoading}>
+          <div css={loadingDotStyles} />
+          <div css={loadingDotStyles} />
+          <div css={loadingDotStyles} />
+        </div>
+      </div>
+      <span css={timestampStyles}>{formatTimestamp(roundedTimestamp)}</span>
     </div>
   );
 };

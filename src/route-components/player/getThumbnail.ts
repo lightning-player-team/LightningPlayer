@@ -1,4 +1,5 @@
 import { CanvasSink } from "mediabunny";
+import { formatTimestamp } from "../../shared/utils/formatTimestamp";
 import { canvasToThumbnailBlob } from "./canvasToBlob";
 import { PreviewThumbnailCache } from "./PreviewThumbnailCache";
 
@@ -25,13 +26,17 @@ export const getThumbnail = async ({
   // Check cache first.
   const cached = thumbnailCache?.get(roundedTimestamp);
   if (cached) {
-    // console.log(`getThumbnail: cache hit for ${roundedTimestamp}`);
+    // console.log(
+    //   `getThumbnail: cache hit for ${formatTimestamp(roundedTimestamp)}`,
+    // );
     return cached;
   }
 
   if (!thumbnailVideoSink) return undefined;
 
-  // console.log(`getThumbnail: cache miss for ${roundedTimestamp}`);
+  console.log(
+    `getThumbnail: cache miss for ${formatTimestamp(roundedTimestamp)}`,
+  );
 
   try {
     // Fetch at rounded timestamp for consistency with cache.
@@ -49,7 +54,14 @@ export const getThumbnail = async ({
 
     return url;
   } catch (error) {
-    console.error(`Error fetching thumbnail for ${roundedTimestamp}s:`, error);
+    if (!thumbnailVideoSink) {
+      console.log(`getThumbnail: videoSink unmounted`);
+    } else {
+      console.error(
+        `Error fetching thumbnail for ${roundedTimestamp}s:`,
+        error,
+      );
+    }
     return undefined;
   }
 };

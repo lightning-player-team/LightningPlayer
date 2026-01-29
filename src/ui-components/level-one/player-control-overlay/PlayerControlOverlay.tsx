@@ -22,6 +22,7 @@ import {
   progressBarTrackFillStyles,
   progressBarTrackStyles,
   rightContainerStyles,
+  topContainerStyles,
 } from "./PlayerControlOverlay.styles";
 
 export interface IPlayerControlOverlayProps {
@@ -91,6 +92,14 @@ export const PlayerControlOverlay: FC<IPlayerControlOverlayProps> = ({
       play();
     } else {
       pause();
+    }
+  };
+
+  const handleOnMouseDownOverlay: MouseEventHandler<HTMLDivElement> = (
+    event,
+  ) => {
+    if (event.button === 0) {
+      handleOnClickPlayButton();
     }
   };
 
@@ -198,6 +207,7 @@ export const PlayerControlOverlay: FC<IPlayerControlOverlayProps> = ({
       onMouseEnter={handleOnMouseEnterOverlay}
       onMouseLeave={handleOnMouseLeaveOverlay}
     >
+      <div css={topContainerStyles} onMouseDown={handleOnMouseDownOverlay} />
       <div css={bottomControlsContainerStyles}>
         {/* ProgressBar container */}
         <div
