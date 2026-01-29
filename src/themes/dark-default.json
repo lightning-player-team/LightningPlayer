@@ -58,6 +58,7 @@
   "motion": {
     "playerControls": {
       "button": {
+        "foregroundScale": 1.0618,
         "transitionDuration": "0.4s",
         "transitionTimingFunction": "ease-in-out"
       },

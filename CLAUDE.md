@@ -70,7 +70,7 @@ UI components in `src/ui-components/`:
 
 - Avoid hard casting as much as possible.
 
-- When validating changes, run `pnpm lint`.
+- When running ESLint to check for errors, simply run `pnpm lint` - no need for `cd` or other params.
 
 - All fields in objects, types, interfaces, enums, and function parameters are alphanumerically sorted. When doing this in styles files, CSS selectors (like &:hover, [data-...]) need to be kept at the end and retain their original order to preserve cascade behavior.
 
@@ -174,11 +174,32 @@ Supports click-to-seek and drag-to-seek:
 
 Helper functions: `getProgressPercentageFromEvent` (`src/ui-components/level-one/player-control-overlay/getProgressPercentageFromEvent.ts`, returns 0-1), `getProgressFromEvent` (`src/ui-components/level-one/player-control-overlay/getProgressFromEvent.ts`, converts to seconds).
 
-##### Preview thumbnail (`src/ui-components/base/preview-thumbnail/PreviewThumbnail.tsx`)
+##### Preview thumbnail
 
-Uses a pattern to avoid synchronous setState in effects (which causes cascading renders). Store timestamp alongside async data (url), then compare in render. When `timestamp` prop changes, the comparison immediately fails (showing placeholder) without needing a synchronous setState.
+The PreviewThumbail uses separate `CanvasSink` (`previewThumbnailVideoSink`) dedicated to thumbnail fetching, plus a `PreviewThumbnailCache` for caching.
 
-Fetching of the thumbnail is expensive, and is done with `useDebouncedEffect`.
+**PreviewThumbnailCache (`src/route-components/player/PreviewThumbnailCache.ts`)**:
+
+- LRU cache storing `{ timestamp → blob URL }` with memory-based eviction (default: 100MB).
+- Background auto-fill: On file load, fetches thumbnails sequentially from timestamp 0 at 1-second intervals.
+- Auto-fill stops completely when memory limit is reached.
+- `dispose()` revokes all blob URLs and clears the cache.
+
+**canvasToThumbnailBlob (`src/route-components/player/canvasToBlob.ts`)**:
+
+- Resizes full-resolution canvas to 160×90 JPEG thumbnails (~28KB each vs ~667KB for full PNG).
+- Enables caching ~3500 thumbnails within the 100MB limit.
+
+**getThumbnail (`src/route-components/player/getThumbnail.ts`)**:
+
+- Rounds timestamp to nearest second for cache key consistency with auto-fill.
+- Checks cache first; on miss, fetches from `thumbnailVideoSink` and caches result.
+
+**PreviewThumbnail (`src/ui-components/base/preview-thumbnail/PreviewThumbnail.tsx`)**:
+
+- Uses imperative `img.src` updates via ref instead of React state to keep up with fast mouse movement.
+- Tracks `displayedTimestampRef` to skip redundant fetches for the same rounded timestamp.
+- URL lifecycle managed by `PreviewThumbnailCache`, not this component.
 
 ## Critical Configuration
 

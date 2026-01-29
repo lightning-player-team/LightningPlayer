@@ -1,4 +1,4 @@
-import { css, Theme } from "@emotion/react";
+import { css, keyframes, Theme } from "@emotion/react";
 
 export const thumbnailHeight = 90;
 export const thumbnailWidth = 160;
@@ -11,11 +11,62 @@ export const containerStyles = css({
   gap: 4,
 });
 
+const loadingDotPulse = keyframes({
+  "0%, 80%, 100%": {
+    opacity: 0.3,
+  },
+  "40%": {
+    opacity: 1,
+  },
+});
+
+export const loadingOverlayStyles = css({
+  alignItems: "center",
+  borderRadius,
+  display: "flex",
+  gap: 6,
+  height: thumbnailHeight,
+  justifyContent: "center",
+  left: 0,
+  opacity: 0,
+  pointerEvents: "none",
+  position: "absolute",
+  top: 0,
+  transition: "opacity 150ms ease-in-out",
+  width: thumbnailWidth,
+
+  "&[data-loading='true']": {
+    opacity: 1,
+  },
+});
+
+export const loadingDotStyles = css({
+  animation: `${loadingDotPulse} 1.2s ease-in-out infinite`,
+  backgroundColor: "white",
+  borderRadius: "50%",
+  height: 8,
+  width: 8,
+  "&:nth-of-type(1)": {
+    animationDelay: "0s",
+  },
+  "&:nth-of-type(2)": {
+    animationDelay: "0.2s",
+  },
+  "&:nth-of-type(3)": {
+    animationDelay: "0.4s",
+  },
+});
+
+export const thumbnailContainerStyles = css({
+  position: "relative",
+});
+
 export const thumbnailStyles = (theme: Theme) =>
   css({
     backgroundColor: theme.colors.playerControls.previewThumbnail.background,
     border: `1px solid ${theme.colors.playerControls.previewThumbnail.border}`,
     borderRadius,
+    display: "block",
     height: thumbnailHeight,
     objectFit: "cover",
     width: thumbnailWidth,
@@ -27,7 +78,12 @@ export const placeholderStyles = (theme: Theme) =>
     border: `1px solid ${theme.colors.playerControls.previewThumbnail.border}`,
     borderRadius,
     height: thumbnailHeight,
+    position: "absolute",
     width: thumbnailWidth,
+
+    "&[data-initialized='true']": {
+      opacity: 0,
+    },
   });
 
 export const timestampStyles = (theme: Theme) =>

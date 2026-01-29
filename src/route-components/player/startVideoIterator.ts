@@ -33,11 +33,19 @@ export const startVideoIterator = async ({
   // Create a new iterator.
   videoFrameIteratorRef.current = videoSink.canvases(playbackClock.currentTime);
 
+  // Tracking performance as seeking can be a challenge for videos with sparse keyframes.
+  const timeStart = Date.now();
+  console.log(`startVideoIterator: requesting next two frames...`);
+
   // Get the first two frames.
   const firstFrame =
     (await videoFrameIteratorRef.current.next()).value ?? undefined;
   const secondFrame =
     (await videoFrameIteratorRef.current.next()).value ?? undefined;
+
+  console.log(
+    `startVideoIterator: received next two frames after ${Date.now() - timeStart}`,
+  );
 
   nextFrameRef.current = secondFrame;
 

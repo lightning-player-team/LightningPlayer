@@ -61,6 +61,7 @@ declare module "@emotion/react" {
     motion: {
       playerControls: {
         button: {
+          foregroundScale: number;
           transitionDuration: string;
           transitionTimingFunction: string;
         };

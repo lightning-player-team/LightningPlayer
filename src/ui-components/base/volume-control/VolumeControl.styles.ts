@@ -33,14 +33,19 @@ export const iconButtonStyles = (theme: Theme) =>
     fontSize: 24,
     lineHeight: 0,
     padding: 0,
-    transition: `color ${theme.motion.playerControls.button.transitionDuration} ${theme.motion.playerControls.button.transitionTimingFunction}`,
+    transitionDuration: theme.motion.playerControls.button.transitionDuration,
+    transitionProperty: "color, transform",
+    transitionTimingFunction:
+      theme.motion.playerControls.button.transitionTimingFunction,
 
     "&:hover": {
       color: theme.colors.playerControls.button.foreground,
+      transform: `scale(${theme.motion.playerControls.button.foregroundScale})`,
     },
 
     "[data-is-expanded=true] &": {
       color: theme.colors.playerControls.button.foreground,
+      transform: `scale(${theme.motion.playerControls.button.foregroundScale})`,
     },
   });
 

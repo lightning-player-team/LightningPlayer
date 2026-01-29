@@ -22,6 +22,7 @@ import {
   progressBarTrackFillStyles,
   progressBarTrackStyles,
   rightContainerStyles,
+  topContainerStyles,
 } from "./PlayerControlOverlay.styles";
 
 export interface IPlayerControlOverlayProps {
@@ -30,7 +31,9 @@ export interface IPlayerControlOverlayProps {
    */
   duration: number;
   /**
-   * @param timestamp in seconds. This component simply passes it to PreviewThumbnail.
+   * Fetches thumbnail URL. Passed to PreviewThumbnail.
+   *
+   * @param timestamp in seconds.
    */
   getThumbnail: (timestamp: number) => Promise<string | undefined>;
   isDraggingProgressBarRef: RefObject<boolean>;
@@ -89,6 +92,14 @@ export const PlayerControlOverlay: FC<IPlayerControlOverlayProps> = ({
       play();
     } else {
       pause();
+    }
+  };
+
+  const handleOnMouseDownOverlay: MouseEventHandler<HTMLDivElement> = (
+    event,
+  ) => {
+    if (event.button === 0) {
+      handleOnClickPlayButton();
     }
   };
 
@@ -196,6 +207,7 @@ export const PlayerControlOverlay: FC<IPlayerControlOverlayProps> = ({
       onMouseEnter={handleOnMouseEnterOverlay}
       onMouseLeave={handleOnMouseLeaveOverlay}
     >
+      <div css={topContainerStyles} onMouseDown={handleOnMouseDownOverlay} />
       <div css={bottomControlsContainerStyles}>
         {/* ProgressBar container */}
         <div

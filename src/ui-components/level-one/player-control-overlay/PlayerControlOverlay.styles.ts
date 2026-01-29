@@ -9,6 +9,8 @@ const progressBarContainerHeight = progressBarThumbExpandedRadius * 2;
 export const playerControlOverlayContainerStyles = (theme: Theme) =>
   css({
     background: "transparent",
+    display: "flex",
+    flexDirection: "column",
     height: "100%",
     left: 0,
     opacity: 0,
@@ -23,15 +25,18 @@ export const playerControlOverlayContainerStyles = (theme: Theme) =>
     },
   });
 
+export const topContainerStyles = css({
+  cursor: "pointer",
+  flex: 1,
+});
+
 export const bottomControlsContainerStyles = css({
   alignItems: "center",
-  bottom: 0,
   boxSizing: "border-box",
   display: "flex",
   flexDirection: "column",
   paddingLeft: 20,
   paddingRight: 20,
-  position: "absolute",
   width: "100%",
 });
 
@@ -137,10 +142,14 @@ export const playButtonStyles = (theme: Theme) =>
     fontSize: 36,
     lineHeight: 0,
     padding: 0,
-    transition: `color ${theme.motion.playerControls.button.transitionDuration} ${theme.motion.playerControls.button.transitionTimingFunction}`,
+    transitionDuration: theme.motion.playerControls.button.transitionDuration,
+    transitionProperty: "color, transform",
+    transitionTimingFunction:
+      theme.motion.playerControls.button.transitionTimingFunction,
 
     "&:hover": {
       color: theme.colors.playerControls.button.foreground,
+      transform: `scale(${theme.motion.playerControls.button.foregroundScale})`,
     },
   });
 

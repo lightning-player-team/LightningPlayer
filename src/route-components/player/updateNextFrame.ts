@@ -51,18 +51,18 @@ export const updateNextFrame = async ({
     const playbackTime = playbackClock.currentTime;
     if (newNextFrame.timestamp <= playbackTime) {
       // Draw it immediately.
-      console.log(
-        `updateNextFrame: drawing frame at ${newNextFrame.timestamp}, playbackTime = ${playbackTime}`,
-      );
+      // console.log(
+      //   `updateNextFrame: drawing frame at ${newNextFrame.timestamp}, playbackTime = ${playbackTime}`,
+      // );
       draw({
         ctx,
         screenDimensions,
         wrappedCanvas: newNextFrame,
       });
     } else {
-      console.log(
-        `updateNextFrame: fetched next frame at ${newNextFrame.timestamp}, playbackTime = ${playbackTime}`,
-      );
+      // console.log(
+      //   `updateNextFrame: fetched next frame at ${newNextFrame.timestamp}, playbackTime = ${playbackTime}`,
+      // );
       // Save it for later.
       nextFrameRef.current = newNextFrame;
       break;
