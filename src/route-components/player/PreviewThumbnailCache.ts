@@ -2,18 +2,7 @@ import { CanvasSink } from "mediabunny";
 import { formatTimestamp } from "../../shared/utils/formatTimestamp";
 import { canvasToThumbnailBlob } from "./canvasToBlob";
 
-/**
- * Fill mode for auto-fill behavior.
- * - 'linear': Fetch thumbnails sequentially from start to end.
- * - 'none': No auto-fill, only cache user-requested thumbnails.
- */
-export type PreviewThumbnailCacheFillMode = "linear" | "none";
-
 export interface IPreviewThumbnailCacheConfig {
-  /**
-   * Fill mode for auto-fill behavior. Default: 'linear'.
-   */
-  fillMode: PreviewThumbnailCacheFillMode;
   /**
    * Interval in seconds between auto-fill thumbnails. Default: 1.
    */
@@ -32,7 +21,6 @@ interface ICachedThumbnail {
 
 const DEFAULT_CONFIG: IPreviewThumbnailCacheConfig = {
   fillIntervalSeconds: 1,
-  fillMode: "linear",
   maxMemoryBytes: 100 * 1024 * 1024, // 100MB
 };
 

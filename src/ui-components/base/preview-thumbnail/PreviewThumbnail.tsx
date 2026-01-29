@@ -4,6 +4,7 @@ import {
   containerStyles,
   loadingDotStyles,
   loadingOverlayStyles,
+  placeholderStyles,
   thumbnailContainerStyles,
   thumbnailStyles,
   timestampStyles,
@@ -27,14 +28,14 @@ export const PreviewThumbnail: FC<IPreviewThumbnailProps> = ({
   timestamp,
 }) => {
   const imgRef = useRef<HTMLImageElement>(null);
-  // Track if image has loaded successfully.
+  // An non-undefined currentThumbnailTimestamp also means there's at least
+  // one image available to render.
   const [currentThumbnailTimestamp, setCurrentThumbnailTimestamp] = useState<
     number | undefined
   >(undefined);
   const roundedTimestamp = Math.round(timestamp);
 
-  // Fetch thumbnail when timestamp changes (debounced).
-  // useDebouncedEffect(fetchThumbnail, THUMBNAIL_DEBOUNCE_MS);
+  // Fetch thumbnail when timestamp changes.
   useEffect(() => {
     let cancelled = false;
     const fetch = async () => {
@@ -72,7 +73,10 @@ export const PreviewThumbnail: FC<IPreviewThumbnailProps> = ({
   return (
     <div css={containerStyles}>
       <div css={thumbnailContainerStyles}>
-        {/* Always render img, hide via CSS when not loaded. */}
+        <div
+          css={placeholderStyles}
+          data-initialized={currentThumbnailTimestamp !== undefined}
+        />
         <img
           alt="Preview"
           css={thumbnailStyles}

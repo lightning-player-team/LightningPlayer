@@ -282,7 +282,6 @@ export const Player: FC = () => {
       // Separate video sink for thumbnails to avoid canvas pool conflicts.
       const thumbnailVideoSink = new CanvasSink(videoTracks[0], {
         fit: "contain",
-        poolSize: 2,
       });
       const duration = await videoTracks[0].computeDuration();
 
@@ -319,11 +318,11 @@ export const Player: FC = () => {
         // Initialize thumbnail cache and start auto-fill.
         const thumbnailCache = new PreviewThumbnailCache();
         thumbnailCacheRef.current = thumbnailCache;
-        // thumbnailCache.runAutoFill({
-        //   duration,
-        //   timestamp: 0,
-        //   videoSink: thumbnailVideoSink,
-        // });
+        thumbnailCache.runAutoFill({
+          duration,
+          timestamp: 0,
+          videoSink: thumbnailVideoSink,
+        });
 
         setCurrentAudioSink(audioSink);
         setPreviewThumbnailVideoSink(thumbnailVideoSink);
@@ -476,7 +475,8 @@ export const Player: FC = () => {
   };
 
   /**
-   * Fetches thumbnail URL for PreviewThumbnail.
+   * Fetches thumbnail URL at timestamp with the the thumbnail cache.
+   * Supplied to PreviewThumbnail.
    *
    * @param timestamp in seconds.
    */

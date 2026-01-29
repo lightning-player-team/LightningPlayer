@@ -34,6 +34,7 @@ export const loadingOverlayStyles = css({
   top: 0,
   transition: "opacity 150ms ease-in-out",
   width: thumbnailWidth,
+
   "&[data-loading='true']": {
     opacity: 1,
   },
@@ -69,6 +70,20 @@ export const thumbnailStyles = (theme: Theme) =>
     height: thumbnailHeight,
     objectFit: "cover",
     width: thumbnailWidth,
+  });
+
+export const placeholderStyles = (theme: Theme) =>
+  css({
+    backgroundColor: theme.colors.playerControls.previewThumbnail.background,
+    border: `1px solid ${theme.colors.playerControls.previewThumbnail.border}`,
+    borderRadius,
+    height: thumbnailHeight,
+    position: "absolute",
+    width: thumbnailWidth,
+
+    "&[data-initialized='true']": {
+      opacity: 0,
+    },
   });
 
 export const timestampStyles = (theme: Theme) =>
