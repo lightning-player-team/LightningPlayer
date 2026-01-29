@@ -19,6 +19,7 @@ import { PlayerControlOverlay } from "../../ui-components/level-one/player-contr
 import { draw } from "./draw";
 import { getThumbnail } from "./getThumbnail";
 import { PlaybackClock } from "./PlaybackClock";
+import { PreviewThumbnailCache } from "./PreviewThumbnailCache";
 import { runAudioIterator } from "./runAudioIterator";
 import { startVideoIterator } from "./startVideoIterator";
 import { updateNextFrame } from "./updateNextFrame";
@@ -37,8 +38,13 @@ export const Player: FC = () => {
     useRef<AsyncGenerator<WrappedAudioBuffer, void, unknown>>(undefined);
   // VideoSink produces videoFrameIterators for video playback.
   const [currentVideoSink, setCurrentVideoSink] = useState<CanvasSink>();
+  // Separate VideoSink for thumbnail fetching to avoid canvas pool conflicts.
+  const [previewThumbnailVideoSink, setPreviewThumbnailVideoSink] =
+    useState<CanvasSink>();
   const videoFrameIteratorRef =
     useRef<AsyncGenerator<WrappedCanvas, void, unknown>>(undefined);
+  // Cache for pre-fetched thumbnails.
+  const thumbnailCacheRef = useRef<PreviewThumbnailCache>(undefined);
 
   // Total duration in seconds.
   // When duration is set, it also means that a file has finished loading.
@@ -262,8 +268,13 @@ export const Player: FC = () => {
 
       const videoTracks = await input.getVideoTracks();
       const videoSink = new CanvasSink(videoTracks[0], {
-        poolSize: 2,
         fit: "contain", // In case the video changes dimensions over time
+        poolSize: 2,
+      });
+      // Separate video sink for thumbnails to avoid canvas pool conflicts.
+      const thumbnailVideoSink = new CanvasSink(videoTracks[0], {
+        fit: "contain",
+        poolSize: 2,
       });
       const duration = await videoTracks[0].computeDuration();
 
@@ -295,7 +306,18 @@ export const Player: FC = () => {
         const playbackClock = new PlaybackClock(audioContext);
         playbackClockRef.current = playbackClock;
 
+        // Dispose previous thumbnail cache if exists.
+        thumbnailCacheRef.current?.dispose();
+        // Initialize thumbnail cache and start auto-fill.
+        const thumbnailCache = new PreviewThumbnailCache();
+        thumbnailCacheRef.current = thumbnailCache;
+        thumbnailCache.startAutoFill({
+          duration,
+          videoSink: thumbnailVideoSink,
+        });
+
         setCurrentAudioSink(audioSink);
+        setPreviewThumbnailVideoSink(thumbnailVideoSink);
         setCurrentVideoSink(videoSink);
         setDuration(duration);
 
@@ -321,6 +343,7 @@ export const Player: FC = () => {
     return () => {
       cancelled = true;
       cleanupPlayback();
+      thumbnailCacheRef.current?.dispose();
     };
   }, [files]);
 
@@ -367,9 +390,9 @@ export const Player: FC = () => {
 
         // Check if the current playback time has caught up to the next frame.
         if (nextFrame && nextFrame.timestamp <= playbackTime) {
-          console.log(
-            `render: drawing frame at ${nextFrame.timestamp}, playbackTime: ${playbackTime}`,
-          );
+          // console.log(
+          //   `render: drawing frame at ${nextFrame.timestamp}, playbackTime: ${playbackTime}`,
+          // );
           draw({
             ctx,
             screenDimensions: screenDimensionsRef.current,
@@ -440,14 +463,18 @@ export const Player: FC = () => {
   };
 
   /**
-   * Supplied to PreviewThumbnail.
+   * Fetches thumbnail URL for PreviewThumbnail.
    *
    * @param timestamp in seconds.
    */
   const getThumbnailCallback = useCallback(
     (timestamp: number) =>
-      getThumbnail({ timestamp, videoSink: currentVideoSink }),
-    [currentVideoSink],
+      getThumbnail({
+        thumbnailCache: thumbnailCacheRef.current,
+        thumbnailVideoSink: previewThumbnailVideoSink,
+        timestamp,
+      }),
+    [previewThumbnailVideoSink],
   );
 
   if (!files) {

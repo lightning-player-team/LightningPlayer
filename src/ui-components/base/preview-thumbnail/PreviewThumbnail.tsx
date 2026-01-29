@@ -1,8 +1,4 @@
-import { FC, useCallback, useEffect, useRef, useState } from "react";
-import {
-  IDebouncedEffectCallbackParams,
-  useDebouncedEffect,
-} from "../../../shared/hooks/useDebouncedEffect";
+import { FC, useEffect, useRef, useState } from "react";
 import { formatTimestamp } from "../../../shared/utils/formatTimestamp";
 import {
   containerStyles,
@@ -11,11 +7,10 @@ import {
   timestampStyles,
 } from "./PreviewThumbnail.styles";
 
-/** Debounce delay for thumbnail fetching in milliseconds. */
-const THUMBNAIL_DEBOUNCE_MS = 50;
-
 export interface IPreviewThumbnailProps {
   /**
+   * Fetches thumbnail URL for timestamp. Returns cached URL immediately if available.
+   *
    * @param timestamp in seconds.
    */
   getThumbnail: (timestamp: number) => Promise<string | undefined>;
@@ -25,66 +20,72 @@ export interface IPreviewThumbnailProps {
   timestamp: number;
 }
 
-interface IThumbnail {
-  timestamp: number;
-  url: string;
-}
-
 export const PreviewThumbnail: FC<IPreviewThumbnailProps> = ({
   getThumbnail,
   timestamp,
 }) => {
-  const [thumbnail, setThumbnail] = useState<IThumbnail | undefined>();
-  const prevUrlRef = useRef<string | undefined>(undefined);
+  const imgRef = useRef<HTMLImageElement>(null);
+  // Track the rounded timestamp that's currently displayed.
+  const displayedTimestampRef = useRef<number | undefined>(undefined);
+  // Track if image has loaded successfully.
+  const [hasImage, setHasImage] = useState(false);
 
-  const fetchThumbnail = useCallback(
-    async (state: IDebouncedEffectCallbackParams) => {
-      console.log(`PreviewThumbnail: fetching for ${timestamp}s`);
-      if (state.cancelled) {
-        console.log("PreviewThumbnail: cancelled before fetching.");
-        return;
-      }
-      const url = await getThumbnail(timestamp);
-      if (state.cancelled) {
-        console.log("PreviewThumbnail: cancelled after fetching.");
-        // Revoke if we got a URL but the effect was cancelled.
-        if (url) URL.revokeObjectURL(url);
-        return;
-      }
-      // Revoke previous URL to free memory.
-      if (prevUrlRef.current) {
-        URL.revokeObjectURL(prevUrlRef.current);
-      }
-      prevUrlRef.current = url;
-      if (url) {
-        setThumbnail({ timestamp, url });
-      }
-    },
-    [getThumbnail, timestamp],
-  );
-
-  // Get thumbnail when timestamp changes but debounced.
-  useDebouncedEffect(fetchThumbnail, THUMBNAIL_DEBOUNCE_MS);
-
-  // Cleanup on unmount.
+  // Fetch thumbnail when timestamp changes (debounced).
+  // useDebouncedEffect(fetchThumbnail, THUMBNAIL_DEBOUNCE_MS);
   useEffect(() => {
-    return () => {
-      if (prevUrlRef.current) {
-        URL.revokeObjectURL(prevUrlRef.current);
+    let cancelled = false;
+    const fetch = async () => {
+      const roundedTimestamp = Math.round(timestamp);
+
+      // Skip if already displaying this timestamp.
+      if (displayedTimestampRef.current === roundedTimestamp) {
+        return;
+      }
+
+      if (cancelled) {
+        return;
+      }
+
+      const url = await getThumbnail(timestamp);
+
+      if (cancelled) {
+        return;
+      }
+
+      if (url && imgRef.current) {
+        // Update img src imperatively - no React state delay.
+        imgRef.current.src = url;
+        displayedTimestampRef.current = roundedTimestamp;
       }
     };
-  }, []);
+    fetch();
 
-  // Only show the image if it matches the current timestamp and is loaded.
-  const showImage = thumbnail && thumbnail.timestamp === timestamp;
+    return () => {
+      cancelled = true;
+    };
+  }, [getThumbnail, timestamp]);
+
+  // Note: URL lifecycle is managed by ThumbnailCache, not this component.
+
+  const handleImageLoad = () => {
+    setHasImage(true);
+  };
+
+  const handleImageError = () => {
+    setHasImage(false);
+  };
 
   return (
     <div css={containerStyles}>
-      {showImage ? (
-        <img alt="Preview" css={thumbnailStyles} src={thumbnail.url} />
-      ) : (
-        <div css={placeholderStyles} />
-      )}
+      {/* Always render img, hide via CSS when not loaded */}
+      <img
+        alt="Preview"
+        css={[thumbnailStyles, { display: hasImage ? "block" : "none" }]}
+        onError={handleImageError}
+        onLoad={handleImageLoad}
+        ref={imgRef}
+      />
+      {!hasImage && <div css={placeholderStyles} />}
       <span css={timestampStyles}>{formatTimestamp(timestamp)}</span>
     </div>
   );

@@ -30,7 +30,9 @@ export interface IPlayerControlOverlayProps {
    */
   duration: number;
   /**
-   * @param timestamp in seconds. This component simply passes it to PreviewThumbnail.
+   * Fetches thumbnail URL. Passed to PreviewThumbnail.
+   *
+   * @param timestamp in seconds.
    */
   getThumbnail: (timestamp: number) => Promise<string | undefined>;
   isDraggingProgressBarRef: RefObject<boolean>;
