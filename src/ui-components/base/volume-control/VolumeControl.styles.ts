@@ -13,12 +13,13 @@ const transitionTimingFunction = "ease-in-out";
 export const containerStyles = css({
   alignItems: "center",
   display: "flex",
+  height: "100%",
   gap: iconSliderGap,
-  overflow: "hidden",
+  // overflow: "hidden",
   transition: `width ${transitionDuration} ${transitionTimingFunction}`,
   width: collapsedWidth,
 
-  "&[data-is-expanded=true]": {
+  "&[data-is-volume-control-expanded=true]": {
     width: expandedWidth,
   },
 });
@@ -43,7 +44,7 @@ export const iconButtonStyles = (theme: Theme) =>
       transform: `scale(${theme.motion.playerControls.button.foregroundScale})`,
     },
 
-    "[data-is-expanded=true] &": {
+    "[data-is-volume-control-expanded=true] &": {
       color: theme.colors.playerControls.button.foreground,
       transform: `scale(${theme.motion.playerControls.button.foregroundScale})`,
     },
@@ -59,7 +60,7 @@ export const sliderContainerStyles = css({
   transition: `opacity ${transitionDuration} ${transitionTimingFunction}`,
   width: sliderWidth,
 
-  "[data-is-expanded=true] &": {
+  "[data-is-volume-control-expanded=true] &": {
     opacity: 1,
   },
 });
@@ -89,4 +90,19 @@ export const thumbStyles = (theme: Theme) =>
     height: thumbSize,
     position: "absolute",
     width: thumbSize,
+  });
+
+/**
+ * Tooltip styles for VolumeControls - displays above the progress bar.
+ * Offset: 8px (buttonContainer marginTop) + 16px (progressBar height) + 6px (gap) = 30px.
+ * Horizontal positioning is handled dynamically by the Tooltip component via boundsRef.
+ */
+export const tooltipStyles = (theme: Theme) =>
+  css({
+    background: theme.colors.playerControls.tooltip.background,
+    bottom: "100%",
+    color: theme.colors.playerControls.tooltip.color,
+    marginBottom: 30,
+    marginTop: 0,
+    top: "auto",
   });

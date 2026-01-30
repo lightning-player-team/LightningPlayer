@@ -1,8 +1,9 @@
 import {
   Dispatch,
   FC,
-  MouseEventHandler,
+  RefObject,
   SetStateAction,
+  useEffect,
   useRef,
   useState,
 } from "react";
@@ -10,6 +11,7 @@ import Speaker0Icon from "../../../assets/svgs/speaker-0.svg?react";
 import Speaker1Icon from "../../../assets/svgs/speaker-1.svg?react";
 import Speaker2Icon from "../../../assets/svgs/speaker-2.svg?react";
 import SpeakerMuteIcon from "../../../assets/svgs/speaker-mute.svg?react";
+import { Tooltip } from "../tooltip/Tooltip";
 import { getVolumeFromEvent } from "./getVolumeFromEvent";
 import {
   containerStyles,
@@ -19,6 +21,7 @@ import {
   sliderWidth,
   thumbSize,
   thumbStyles,
+  tooltipStyles,
   trackStyles,
 } from "./VolumeControl.styles";
 
@@ -35,6 +38,7 @@ export interface IVolumeControlProps {
    */
   onVolumeChange: (volume: number) => void;
   setIsPinned: Dispatch<SetStateAction<boolean>>;
+  toolTipBoundsRef: RefObject<HTMLElement | null>;
   volume: number;
 }
 
@@ -44,8 +48,10 @@ export const VolumeControl: FC<IVolumeControlProps> = ({
   onMuteToggle,
   onVolumeChange,
   setIsPinned,
+  toolTipBoundsRef,
   volume,
 }) => {
+  const [isDragging, setIsDragging] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
   const sliderRef = useRef<HTMLDivElement>(null);
 
@@ -60,34 +66,50 @@ export const VolumeControl: FC<IVolumeControlProps> = ({
     setIsHovered(false);
   };
 
-  const handleSliderMouseDown: MouseEventHandler<HTMLDivElement> = (event) => {
-    if (event.button !== 0) return;
-    // Prevents text selection.
-    event.preventDefault();
-    setIsPinned(true);
-    const newVolume = getVolumeFromEvent({ event, sliderRef });
-    if (newVolume !== undefined) {
-      console.log("VolumeControl: setting volume:", newVolume);
-      onVolumeChange(newVolume);
-    }
+  useEffect(() => {
+    let cancelled = false;
 
-    // Drag handlers.
-    const handleMouseMove = (e: MouseEvent) => {
-      const newVolume = getVolumeFromEvent({ event: e, sliderRef });
+    const handleSliderMouseDown = (event: MouseEvent) => {
+      if (event.button !== 0) return;
+      // Prevents text selection.
+      event.preventDefault();
+      setIsDragging(true);
+      setIsPinned(true);
+      const newVolume = getVolumeFromEvent({ event, sliderRef });
       if (newVolume !== undefined) {
         console.log("VolumeControl: setting volume:", newVolume);
         onVolumeChange(newVolume);
       }
+
+      // Drag handlers.
+      const handleMouseMove = (e: MouseEvent) => {
+        const newVolume = getVolumeFromEvent({ event: e, sliderRef });
+        if (newVolume !== undefined) {
+          console.log("VolumeControl: setting volume:", newVolume);
+          onVolumeChange(newVolume);
+        }
+      };
+
+      const handleMouseUp = () => {
+        if (!cancelled) {
+          setIsDragging(false);
+        }
+        document.removeEventListener("mousemove", handleMouseMove);
+        document.removeEventListener("mouseup", handleMouseUp);
+      };
+
+      document.addEventListener("mousemove", handleMouseMove);
+      document.addEventListener("mouseup", handleMouseUp);
     };
 
-    const handleMouseUp = () => {
-      document.removeEventListener("mousemove", handleMouseMove);
-      document.removeEventListener("mouseup", handleMouseUp);
-    };
+    if (sliderRef.current) {
+      sliderRef.current.addEventListener("mousedown", handleSliderMouseDown);
+    }
 
-    document.addEventListener("mousemove", handleMouseMove);
-    document.addEventListener("mouseup", handleMouseUp);
-  };
+    return () => {
+      cancelled = true;
+    };
+  }, [onVolumeChange, setIsPinned]);
 
   /**
    * Renders the appropriate speaker icon based on mute state and volume level.
@@ -99,30 +121,41 @@ export const VolumeControl: FC<IVolumeControlProps> = ({
     return <Speaker2Icon />;
   };
 
+  const speakerAriaLabel = isMuted ? "Unmute" : "Mute";
+  const sliderAriaLabel = `Volume: ${Math.round(volume * 100)}`;
   return (
     <div
       css={containerStyles}
-      data-is-expanded={isExpanded}
+      data-is-volume-control-expanded={isExpanded}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
     >
-      <button
-        aria-label={isMuted ? "Unmute" : "Mute"}
-        css={iconButtonStyles}
-        onClick={onMuteToggle}
-        type="button"
+      <Tooltip
+        boundsRef={toolTipBoundsRef}
+        text={speakerAriaLabel}
+        css={tooltipStyles}
       >
-        {renderVolumeIcon()}
-      </button>
-      <div
-        css={sliderContainerStyles}
-        onMouseDown={handleSliderMouseDown}
-        ref={sliderRef}
+        <button
+          aria-label={speakerAriaLabel}
+          css={iconButtonStyles}
+          onClick={onMuteToggle}
+          type="button"
+        >
+          {renderVolumeIcon()}
+        </button>
+      </Tooltip>
+      <Tooltip
+        boundsRef={toolTipBoundsRef}
+        css={[tooltipStyles]}
+        showTooltip={isDragging}
+        text={sliderAriaLabel}
       >
-        <div css={trackStyles} />
-        <div css={fillStyles} style={{ width: thumbPosition }} />
-        <div css={thumbStyles} style={{ left: thumbPosition }} />
-      </div>
+        <div css={sliderContainerStyles} ref={sliderRef}>
+          <div css={trackStyles} />
+          <div css={fillStyles} style={{ width: thumbPosition }} />
+          <div css={thumbStyles} style={{ left: thumbPosition }} />
+        </div>
+      </Tooltip>
     </div>
   );
 };

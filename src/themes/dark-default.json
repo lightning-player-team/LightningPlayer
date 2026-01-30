@@ -9,24 +9,28 @@
     },
     "playerControls": {
       "button": {
-        "color": "rgba(238, 238, 238, 0.7)",
-        "foreground": "rgb(238, 238, 238)"
+        "color": "rgba(255, 255, 255, 0.8)",
+        "foreground": "rgb(255, 255, 255)"
       },
       "previewThumbnail": {
         "background": "rgb(40, 40, 40)",
         "border": "rgba(255, 255, 255, 0.2)",
-        "timestampBackground": "rgba(0, 0, 0, 0.7)",
+        "timestampBackground": "rgba(50, 50, 50, 0.6)",
         "timestampColor": "rgb(255, 255, 255)"
       },
       "progressBar": {
-        "background": "rgba(255, 255, 255, 0.1)",
-        "hoverFill": "rgba(255, 255, 255, 0.7)",
+        "background": "rgba(50, 50, 50, 0.6)",
+        "hoverFill": "rgba(200, 200, 200, 0.7)",
         "thumb": "rgb(255, 0, 51)"
+      },
+      "tooltip": {
+        "background": "rgba(50, 50, 50, 0.6)",
+        "color": "rgb(255, 255, 255)"
       },
       "volumeControl": {
         "background": "rgba(255, 255, 255, 0.25)",
-        "fill": "rgb(238, 238, 238)",
-        "thumb": "rgb(238, 238, 238)"
+        "fill": "rgb(255, 255, 255)",
+        "thumb": "rgb(255, 255, 255)"
       }
     },
     "root": {
@@ -40,6 +44,9 @@
       "default": "rgb(241, 241, 241)",
       "link": "rgb(62, 166, 255)"
     },
+    "playbackSettings": {
+      "background": "rgba(28, 28, 28, 0.9)"
+    },
     "titleBar": {
       "activeBackground": "rgb(31, 31, 31)",
       "activeForeground": "rgb(204, 204, 204)",
@@ -50,6 +57,10 @@
       "pressedCloseBackground": "rgb(196, 43, 28)",
       "inactiveBackground": "rgb(44, 44, 44)",
       "inactiveForeground": "rgb(140, 140, 140)"
+    },
+    "tooltip": {
+      "background": "rgba(255, 255, 255, 0.15)",
+      "color": "rgb(255, 255, 255)"
     },
     "window": {
       "background": "rgba(52, 52, 52, 0.98)"

@@ -61,7 +61,7 @@ export const progressBarCurrentStyles = (theme: Theme) =>
     position: "absolute",
     transition: `transform ${theme.motion.playerControls.progressBar.transitionDuration} ${theme.motion.playerControls.progressBar.transitionTimingFunction}`,
 
-    "[data-is-progress-bar-hovered=true] &": {
+    "[data-is-progress-bar-hovered=true] > &": {
       transform: `scaleY(${
         progressBarTrackExpandedHeight / progressBarTrackHeight
       })`,
@@ -77,7 +77,7 @@ export const progressbarThumbStyles = (theme: Theme) =>
     transition: `transform ${theme.motion.playerControls.progressBar.transitionDuration} ${theme.motion.playerControls.progressBar.transitionTimingFunction}`,
     width: progressBarThumbRadius * 2,
 
-    "[data-is-progress-bar-hovered=true] &": {
+    "[data-is-progress-bar-hovered=true] > &": {
       transform: `scale(${
         progressBarThumbExpandedRadius / progressBarThumbRadius
       })`,
@@ -93,7 +93,7 @@ export const progressBarTrackStyles = (theme: Theme) =>
     transition: `transform ${theme.motion.playerControls.progressBar.transitionDuration} ${theme.motion.playerControls.progressBar.transitionTimingFunction}`,
     width: "100%",
 
-    "[data-is-progress-bar-hovered=true] &": {
+    "[data-is-progress-bar-hovered=true] > &": {
       transform: `scaleY(${
         progressBarTrackExpandedHeight / progressBarTrackHeight
       })`,
@@ -114,23 +114,39 @@ export const progressBarTrackFillStyles = (theme: Theme) =>
     },
   });
 
+// Height matches the play button (fontSize 36) for consistent tooltip positioning.
+const buttonContainerHeight = 36;
+
 export const buttonContainerStyles = css({
   alignItems: "center",
   display: "grid",
   gridTemplateColumns: "1fr auto 1fr",
-  marginTop: 8,
   marginBottom: 12,
+  marginTop: 8,
   width: "100%",
 });
 
 export const leftContainerStyles = css({
+  alignItems: "center",
+  display: "flex",
+  height: buttonContainerHeight,
   justifySelf: "start",
+  position: "relative",
 });
 
-export const centerContainerStyles = css({});
+export const centerContainerStyles = css({
+  alignItems: "center",
+  display: "flex",
+  height: buttonContainerHeight,
+  position: "relative",
+});
 
 export const rightContainerStyles = css({
+  alignItems: "center",
+  display: "flex",
+  height: buttonContainerHeight,
   justifySelf: "end",
+  position: "relative",
 });
 
 export const playButtonStyles = (theme: Theme) =>
@@ -163,7 +179,42 @@ export const previewThumbnailContainerStyles = (theme: Theme) =>
     transform: "translateX(-50%)",
     transition: `opacity ${theme.motion.playerControls.progressBar.transitionDuration} ${theme.motion.playerControls.progressBar.transitionTimingFunction}`,
 
-    "[data-is-progress-bar-hovered=true] &": {
+    "[data-is-progress-bar-hovered=true] > &": {
       opacity: 1,
+    },
+  });
+
+/**
+ * Tooltip styles for player controls - displays above the progress bar.
+ * Offset: 8px (buttonContainer marginTop) + 16px (progressBar height) + 6px (gap) = 30px.
+ * Horizontal positioning is handled dynamically by the Tooltip component via boundsRef.
+ */
+export const playerControlTooltipStyles = (theme: Theme) =>
+  css({
+    background: theme.colors.playerControls.tooltip.background,
+    bottom: "100%",
+    color: theme.colors.playerControls.tooltip.color,
+    marginBottom: 30,
+    marginTop: 0,
+    top: "auto",
+  });
+
+export const settingsButtonStyles = (theme: Theme) =>
+  css({
+    background: "transparent",
+    border: "none",
+    color: theme.colors.playerControls.button.color,
+    cursor: "pointer",
+    fontSize: 24,
+    lineHeight: 0,
+    padding: 0,
+    transitionDuration: theme.motion.playerControls.button.transitionDuration,
+    transitionProperty: "color, transform",
+    transitionTimingFunction:
+      theme.motion.playerControls.button.transitionTimingFunction,
+
+    "&:hover": {
+      color: theme.colors.playerControls.button.foreground,
+      transform: `scale(${theme.motion.playerControls.button.foregroundScale})`,
     },
   });

@@ -90,7 +90,7 @@ export const timestampStyles = (theme: Theme) =>
   css({
     backgroundColor:
       theme.colors.playerControls.previewThumbnail.timestampBackground,
-    borderRadius: 2,
+    borderRadius: 8,
     color: theme.colors.playerControls.previewThumbnail.timestampColor,
     fontSize: 12,
     fontWeight: 500,

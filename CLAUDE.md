@@ -46,9 +46,9 @@ pnpm lint          # ESLint
 
 ### File Naming and Structure
 
-- `Component.tsx` - React component
-- `Component.styles.[ts|tsx]` - Emotion styles
-- `Component.types.ts` - TypeScript interfaces
+- `Component.tsx` - React component (keep the component prop's type definition here)
+- `Component.styles.[ts|tsx]` - Emotion styles, constants used by styles
+- `Component.types.ts` - Other TypeScript interfaces, constants, and types
 
 UI components in `src/ui-components/`:
 

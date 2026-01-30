@@ -1,10 +1,13 @@
 import { FC, MouseEventHandler, RefObject, useRef, useState } from "react";
 import PauseIcon from "../../../assets/svgs/pause.svg?react";
 import PlayIcon from "../../../assets/svgs/play.svg?react";
+import SettingsIcon from "../../../assets/svgs/setting.svg?react";
 import { updateProgressBarDOM } from "../../../route-components/player/updateProgressBarDOM";
 import { useDimensions } from "../../../shared/hooks/useDimensions";
+import { PlaybackSettings } from "../../base/playback-settings/PlaybackSettings";
 import { PreviewThumbnail } from "../../base/preview-thumbnail/PreviewThumbnail";
 import { thumbnailWidth } from "../../base/preview-thumbnail/PreviewThumbnail.styles";
+import { Tooltip } from "../../base/tooltip/Tooltip";
 import { VolumeControl } from "../../base/volume-control/VolumeControl";
 import { getProgressFromEvent } from "./getProgressFromEvent";
 import { getProgressPercentageFromEvent } from "./getProgressPercentageFromEvent";
@@ -15,6 +18,7 @@ import {
   leftContainerStyles,
   playButtonStyles,
   playerControlOverlayContainerStyles,
+  playerControlTooltipStyles,
   previewThumbnailContainerStyles,
   progressBarContainerStyles,
   progressBarCurrentStyles,
@@ -22,6 +26,7 @@ import {
   progressBarTrackFillStyles,
   progressBarTrackStyles,
   rightContainerStyles,
+  settingsButtonStyles,
   topContainerStyles,
 } from "./PlayerControlOverlay.styles";
 
@@ -74,19 +79,26 @@ export const PlayerControlOverlay: FC<IPlayerControlOverlayProps> = ({
   seek,
   volume,
 }) => {
+  // Toggles the opacity of the whole overlay.
   const [isHovered, setIsHovered] = useState(true);
   // HoverPercentage from 0 to 1. Undefined means not hovering.
+  // Used to position PreviewThumbnail and render the fill bar.
   const [hoverPercentage, setHoverPercentage] = useState<number | undefined>(
     undefined,
   );
+  // Applies hover styles to progress bar.
   const [isProgressBarHovered, setIsProgressBarHovered] = useState(false);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   // The VolumeControl is pinned when the user makes an update to the volume.
   // It stays pinned until the user interacts with another player control element.
   const [isVolumePinned, setIsVolumePinned] = useState(false);
+
   const progressBarContainerRef = useRef<HTMLDivElement>(null);
   const progressBarContainerDimensions = useDimensions(progressBarContainerRef);
 
+  /** Play button toggles playback. */
   const handleOnClickPlayButton = () => {
+    setIsSettingsOpen(false);
     setIsVolumePinned(false);
     if (!isPlaying) {
       play();
@@ -95,6 +107,12 @@ export const PlayerControlOverlay: FC<IPlayerControlOverlayProps> = ({
     }
   };
 
+  const handleOnClickSettingsButton = () => {
+    setIsSettingsOpen(!isSettingsOpen);
+    setIsVolumePinned(false);
+  };
+
+  /** Clicking on the overlay toggles playback. */
   const handleOnMouseDownOverlay: MouseEventHandler<HTMLDivElement> = (
     event,
   ) => {
@@ -103,24 +121,29 @@ export const PlayerControlOverlay: FC<IPlayerControlOverlayProps> = ({
     }
   };
 
+  /** Set isHovered state that renders the overlay. */
   const handleOnMouseEnterOverlay = () => {
     // console.log("hovered");
     setIsHovered(true);
   };
 
+  /** Unset isHovered state that hides the overlay. */
   const handleOnMouseLeaveOverlay = () => {
     setIsHovered(false);
   };
 
+  /** Set progressBarHovered state. */
   const handleOnMouseEnterProgressBar = () => {
     setIsProgressBarHovered(true);
   };
 
+  /** Unset progressBarHovered state.*/
   const handleOnMouseLeaveProgressBar = () => {
     setIsProgressBarHovered(false);
     // Keep hoverPercentage value so thumbnail stays in place during fade-out.
   };
 
+  /** Manage seek and dragging behavior on progress bar. */
   const handleOnMouseDownProgressBar: MouseEventHandler<HTMLDivElement> = (
     event,
   ) => {
@@ -179,6 +202,7 @@ export const PlayerControlOverlay: FC<IPlayerControlOverlayProps> = ({
     document.addEventListener("mouseup", handleMouseUp);
   };
 
+  /** Updates hoverPercentage state for PreviewThumbnail and fill bar. */
   const handleOnMouseMoveProgressBar: MouseEventHandler<HTMLDivElement> = (
     event,
   ) => {
@@ -254,19 +278,43 @@ export const PlayerControlOverlay: FC<IPlayerControlOverlayProps> = ({
               onMuteToggle={onMuteToggle}
               onVolumeChange={onVolumeChange}
               setIsPinned={setIsVolumePinned}
+              toolTipBoundsRef={progressBarContainerRef}
               volume={volume}
             />
           </div>
           <div css={centerContainerStyles}>
-            <button
-              aria-label="Play"
-              css={playButtonStyles}
-              onClick={handleOnClickPlayButton}
+            <Tooltip
+              boundsRef={progressBarContainerRef}
+              text={isPlaying ? "Pause" : "Play"}
+              css={playerControlTooltipStyles}
             >
-              {isPlaying ? <PauseIcon /> : <PlayIcon />}
-            </button>
+              <button
+                aria-label={isPlaying ? "Pause" : "Play"}
+                css={playButtonStyles}
+                onClick={handleOnClickPlayButton}
+              >
+                {isPlaying ? <PauseIcon /> : <PlayIcon />}
+              </button>
+            </Tooltip>
           </div>
-          <div css={rightContainerStyles} />
+          <div css={rightContainerStyles}>
+            <Tooltip
+              boundsRef={progressBarContainerRef}
+              text="Settings"
+              css={playerControlTooltipStyles}
+            >
+              <button
+                aria-label="Settings"
+                css={settingsButtonStyles}
+                onClick={handleOnClickSettingsButton}
+              >
+                <SettingsIcon />
+              </button>
+            </Tooltip>
+            {isSettingsOpen && (
+              <PlaybackSettings onClose={() => setIsSettingsOpen(false)} />
+            )}
+          </div>
         </div>
       </div>
     </div>

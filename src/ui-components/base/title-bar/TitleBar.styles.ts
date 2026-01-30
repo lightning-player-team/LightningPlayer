@@ -50,7 +50,7 @@ export const windowControlsContainerStyles = (theme: Theme) =>
         background: theme.colors.titleBar.pressedBackground,
       },
 
-      "[data-is-focused=true] &": {
+      "[data-is-focused=true] > &": {
         color: theme.colors.titleBar.activeForeground,
       },
 

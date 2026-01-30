@@ -28,6 +28,7 @@ const DEFAULT_CONFIG: IPreviewThumbnailCacheConfig = {
  * LRU cache for video thumbnails with memory-based eviction and background auto-fill.
  */
 export class PreviewThumbnailCache {
+  // Global cancellation flag; when true, all running auto-fill processes should stop.
   private autoFillCancelled = true;
   // Map maintains insertion order; we move accessed items to end for LRU behavior.
   private cache = new Map<number, ICachedThumbnail>();
@@ -189,7 +190,7 @@ export class PreviewThumbnailCache {
       timestamp += interval;
 
       // Yield to main thread to prevent blocking.
-      await this.yieldToMainThread(0);
+      await this.yieldToMainThread();
     }
 
     if (!this.autoFillCancelled) {
@@ -249,14 +250,11 @@ export class PreviewThumbnailCache {
   /**
    * Yields to the main thread using requestIdleCallback or setTimeout.
    *
-   * @param minDelay - Minimum delay in milliseconds.
    */
-  private yieldToMainThread(minDelay: number): Promise<void> {
+  private yieldToMainThread(): Promise<void> {
     return new Promise((resolve) => {
-      if (minDelay > 0) {
-        setTimeout(resolve, minDelay);
-      } else if ("requestIdleCallback" in window) {
-        requestIdleCallback(() => resolve(), { timeout: 100 });
+      if ("requestIdleCallback" in window) {
+        requestIdleCallback(() => resolve());
       } else {
         setTimeout(resolve, 16); // ~60fps
       }
