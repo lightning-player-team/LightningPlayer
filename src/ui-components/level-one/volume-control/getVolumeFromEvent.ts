@@ -11,8 +11,8 @@ export const getVolumeFromEvent = ({
   event: MouseEvent | React.MouseEvent;
   sliderRef: React.RefObject<HTMLDivElement | null>;
 }): number | undefined => {
-  if (!sliderRef.current) return undefined;
+  if (!sliderRef.current) return;
   const rect = sliderRef.current.getBoundingClientRect();
-  if (rect.width === 0) return undefined;
+  if (rect.width === 0) return;
   return Math.max(0, Math.min(1, (event.clientX - rect.left) / rect.width));
 };

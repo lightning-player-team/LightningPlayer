@@ -26,6 +26,10 @@ declare module "@emotion/react" {
           timestampBackground: string;
           timestampColor: string;
         };
+        tooltip: {
+          background: string;
+          color: string;
+        };
         volumeControl: {
           background: string;
           fill: string;
@@ -43,6 +47,9 @@ declare module "@emotion/react" {
         default: string;
         link: string;
       };
+      playbackSettings: {
+        background: string;
+      };
       titleBar: {
         activeBackground: string;
         activeForeground: string;
@@ -53,6 +60,10 @@ declare module "@emotion/react" {
         pressedCloseBackground: string;
         inactiveBackground: string;
         inactiveForeground: string;
+      };
+      tooltip: {
+        background: string;
+        color: string;
       };
       window: {
         background: string;

@@ -46,9 +46,9 @@ pnpm lint          # ESLint
 
 ### File Naming and Structure
 
-- `Component.tsx` - React component
-- `Component.styles.[ts|tsx]` - Emotion styles
-- `Component.types.ts` - TypeScript interfaces
+- `Component.tsx` - React component (keep the component prop's type definition here)
+- `Component.styles.[ts|tsx]` - Emotion styles, constants used by styles
+- `Component.types.ts` - Other TypeScript interfaces, constants, and types
 
 UI components in `src/ui-components/`:
 
@@ -161,7 +161,10 @@ Shows/hides on hover. Contains: progress bar with preview thumbnail, play/pause 
 
 ##### Volume control (`src/ui-components/base/volume-control/VolumeControl.tsx`)
 
-Volume is stored as a 0-1 value in `volumeState` (`src/shared/atoms/volumeState.ts`, persisted via Jotai's `atomWithStorage`). A quadratic curve (`volume * volume`) is applied to the GainNode for more natural perceived loudness control. The `VolumeControl` component expands on hover and stays "pinned" open after user interaction until they interact with another control.
+Volume is stored as a 0-1 value in `volumeState` (`src/shared/atoms/volumeState.ts`, persisted via Jotai's `atomWithStorage`). A quadratic curve (`volume * volume`) is applied to the GainNode for more natural perceived loudness control. The `VolumeControl` component expands when pinned, and is pinned when
+
+- the user hovers over it. This is "soft-pinned", and removed when the user moves outside of left container.
+- the user clicks on it. This is "hard-pinned", and removed when the user interacts with another player control.
 
 ##### Progress bar (`src/ui-components/level-one/player-control-overlay/PlayerControlOverlay.tsx`)
 
@@ -180,8 +183,10 @@ The PreviewThumbail uses separate `CanvasSink` (`previewThumbnailVideoSink`) ded
 
 **PreviewThumbnailCache (`src/route-components/player/PreviewThumbnailCache.ts`)**:
 
-- LRU cache storing `{ timestamp → blob URL }` with memory-based eviction (default: 100MB).
-- Background auto-fill: On file load, fetches thumbnails sequentially from timestamp 0 at 1-second intervals.
+- LRU cache storing `{ timestamp → blob URL }` with a memory limit (default: 100MB).
+- Background auto-fill: On file load, fetches thumbnails from timestamp 0.
+- On seek, fetch thumbnails on new timestamp.
+- Current auto-fill strategy is a bidirectional, linear fetch on rounded timestamps with 1s intervals.
 - Auto-fill stops completely when memory limit is reached.
 - `dispose()` revokes all blob URLs and clears the cache.
 
@@ -193,12 +198,10 @@ The PreviewThumbail uses separate `CanvasSink` (`previewThumbnailVideoSink`) ded
 **getThumbnail (`src/route-components/player/getThumbnail.ts`)**:
 
 - Rounds timestamp to nearest second for cache key consistency with auto-fill.
-- Checks cache first; on miss, fetches from `thumbnailVideoSink` and caches result.
 
 **PreviewThumbnail (`src/ui-components/base/preview-thumbnail/PreviewThumbnail.tsx`)**:
 
 - Uses imperative `img.src` updates via ref instead of React state to keep up with fast mouse movement.
-- Tracks `displayedTimestampRef` to skip redundant fetches for the same rounded timestamp.
 - URL lifecycle managed by `PreviewThumbnailCache`, not this component.
 
 ## Critical Configuration

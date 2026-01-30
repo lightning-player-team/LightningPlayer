@@ -1,6 +1,8 @@
-/** Target thumbnail dimensions. */
-const THUMBNAIL_MAX_WIDTH = 160;
-const THUMBNAIL_MAX_HEIGHT = 90;
+import {
+  previewThumbnailHeight,
+  previewThumbnailWidth,
+} from "../../ui-components/base/preview-thumbnail/PreviewThumbnail.styles";
+
 /** JPEG quality for thumbnails (0-1). */
 const THUMBNAIL_QUALITY = 0.8;
 
@@ -26,7 +28,7 @@ export const canvasToBlob = async (
 
 /**
  * Converts a canvas to a thumbnail-sized JPEG blob.
- * Resizes to fit within THUMBNAIL_MAX_WIDTH x THUMBNAIL_MAX_HEIGHT while maintaining aspect ratio.
+ * Resizes to fit within previewThumbnailHeight x previewThumbnailWidth while maintaining aspect ratio.
  *
  * @param canvas - The source canvas (full resolution).
  * @returns A promise that resolves to a small JPEG blob.
@@ -39,8 +41,8 @@ export const canvasToThumbnailBlob = async (
 
   // Calculate scaled dimensions maintaining aspect ratio.
   const scale = Math.min(
-    THUMBNAIL_MAX_WIDTH / srcWidth,
-    THUMBNAIL_MAX_HEIGHT / srcHeight,
+    previewThumbnailWidth / srcWidth,
+    previewThumbnailHeight / srcHeight,
   );
   const dstWidth = Math.round(srcWidth * scale);
   const dstHeight = Math.round(srcHeight * scale);

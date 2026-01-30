@@ -28,19 +28,32 @@ const DEFAULT_CONFIG: IPreviewThumbnailCacheConfig = {
  * LRU cache for video thumbnails with memory-based eviction and background auto-fill.
  */
 export class PreviewThumbnailCache {
-  private autoFillCancelled = true;
   // Map maintains insertion order; we move accessed items to end for LRU behavior.
   private cache = new Map<number, ICachedThumbnail>();
   private config: IPreviewThumbnailCacheConfig;
+  private duration: number;
+  // Session ID for auto-fill; incremented to invalidate running loops.
+  private linearAsyncId = 0;
   private totalMemoryBytes = 0;
+  private videoSink: CanvasSink;
 
   /**
    * Creates a new ThumbnailCache instance.
    *
-   * @param config - Optional configuration overrides.
+   * @param params - Configuration and video source.
    */
-  constructor(config?: Partial<IPreviewThumbnailCacheConfig>) {
+  constructor({
+    config,
+    duration,
+    videoSink,
+  }: {
+    config?: Partial<IPreviewThumbnailCacheConfig>;
+    duration: number;
+    videoSink: CanvasSink;
+  }) {
     this.config = { ...DEFAULT_CONFIG, ...config };
+    this.duration = duration;
+    this.videoSink = videoSink;
   }
 
   /**
@@ -70,7 +83,6 @@ export class PreviewThumbnailCache {
       this.cache.set(timestamp, entry);
       return entry.url;
     }
-    return undefined;
   }
 
   /**
@@ -140,63 +152,142 @@ export class PreviewThumbnailCache {
   }
 
   /**
-   * Stops the background auto-fill process.
-   */
-  stopAutoFill(): void {
-    this.autoFillCancelled = true;
-  }
-
-  /**
-   * Runs the auto-fill process, fetching thumbnails sequentially.
+   * Fetches a thumbnail and adds it to the cache.
+   * Falls back to iterator if getCanvas returns null (e.g., no frame at exact timestamp 0).
    *
-   * @param params - Parameters for auto-fill.
+   * @param timestamp - The timestamp to fetch.
+   * @returns True if fetch was successful.
    */
-  async runAutoFill({
-    duration,
-    timestamp,
-    videoSink,
-  }: {
-    duration: number;
-    timestamp: number;
-    videoSink: CanvasSink;
-  }): Promise<void> {
-    this.autoFillCancelled = false;
-    const interval = this.config.fillIntervalSeconds;
-    let fetchedCount = 0;
+  async fetchAndCache(timestamp: number): Promise<string | undefined> {
+    try {
+      let canvas = await this.videoSink.getCanvas(timestamp);
 
-    while (timestamp <= duration && !this.autoFillCancelled) {
-      // Stop if memory limit reached.
-      if (this.totalMemoryBytes >= this.config.maxMemoryBytes) {
-        console.log(
-          `PreviewThumbnailCache: auto-fill stopped at ${formatTimestamp(timestamp)} (memory limit reached: ${(this.totalMemoryBytes / 1024 / 1024).toFixed(1)}MB)`,
+      // Fallback to the first frame at 0s.
+      if (!canvas && timestamp === 0) {
+        const iterator = this.videoSink.canvases(timestamp);
+        canvas = (await iterator.next()).value ?? null;
+        await iterator.return();
+      }
+
+      if (!canvas) {
+        console.error(
+          `PreviewThumbnailCache: error fetching canvas at ${timestamp}`,
         );
         return;
       }
 
-      // Skip if already cached.
-      if (!this.has(timestamp)) {
-        const success = await this.fetchAndCache(timestamp, videoSink);
-        if (success) {
-          fetchedCount++;
-          if (fetchedCount % 60 === 0) {
-            console.log(
-              `PreviewThumbnailCache: auto-fill progress ${formatTimestamp(timestamp)} / ${formatTimestamp(duration)} (${fetchedCount} thumbnails, ${(this.totalMemoryBytes / 1024 / 1024).toFixed(1)}MB)`,
-            );
-          }
-        }
+      const blob = await canvasToThumbnailBlob(canvas.canvas);
+
+      if (!blob) {
+        console.error("PreviewThumbnailCache: error converting to blob");
+        return;
       }
 
-      timestamp += interval;
+      const url = URL.createObjectURL(blob);
+      this.set(timestamp, url, blob.size);
+      return url;
+    } catch (error) {
+      console.error(
+        `PreviewThumbnailCache: error fetching thumbnail at ${formatTimestamp(timestamp)}:`,
+        error,
+      );
+      return;
+    }
+  }
+
+  /**
+   * Starts the auto-fill process from a given timestamp, expanding bidirectionally.
+   * Cancels any previously running auto-fill.
+   *
+   * @param timestamp - The starting timestamp in seconds. Defaults to 0.
+   */
+  startAutoFill(timestamp = 0): void {
+    this.runAutoFillLinear(timestamp);
+  }
+
+  /**
+   * Stops the background auto-fill process.
+   */
+  stopAutoFill(): void {
+    this.stopAutoFillLinear();
+  }
+
+  /**
+   * Runs the auto-fill process, fetching thumbnails bidirectionally.
+   *
+   * @param asyncId - The session ID to check for cancellation.
+   * @param startTimestamp - The starting timestamp in seconds.
+   */
+  private async runAutoFillLinear(startTimestamp: number): Promise<void> {
+    const asyncId = ++this.linearAsyncId;
+    const interval = this.config.fillIntervalSeconds;
+    // Round to nearest interval for cache key consistency with getThumbnail.
+    const roundedStart = Math.round(startTimestamp / interval) * interval;
+
+    let left = roundedStart;
+    let right = roundedStart + interval;
+    let loggedSize = 0;
+
+    while (true) {
+      const canFetchLeft = left >= 0;
+      const canFetchRight = right <= this.duration;
+
+      // Log progress every 50 thumbnails.
+      const currentSize = this.cache.size;
+      const logLeft = canFetchLeft ? left : 0;
+      const logRight = canFetchRight ? right : this.duration;
+      if (currentSize > 0 && currentSize - loggedSize >= 50) {
+        console.log(
+          `PreviewThumbnailCache: auto-fill progress [${formatTimestamp(logLeft)}, ${formatTimestamp(logRight)}] / ${formatTimestamp(this.duration)} (${currentSize} thumbnails, ${(this.totalMemoryBytes / 1024 / 1024).toFixed(1)}MB)`,
+        );
+        loggedSize = currentSize;
+      }
+
+      // Check cancellation.
+      if (asyncId !== this.linearAsyncId) return;
+
+      // Check memory limit.
+      if (this.totalMemoryBytes >= this.config.maxMemoryBytes) {
+        console.log(
+          `PreviewThumbnailCache: auto-fill stopped at [${formatTimestamp(logLeft)}, ${formatTimestamp(logRight)}] (memory limit reached: ${(this.totalMemoryBytes / 1024 / 1024).toFixed(1)}MB)`,
+        );
+        return;
+      }
+
+      // Exit when both directions exhausted.
+      if (!canFetchLeft && !canFetchRight) {
+        console.log(
+          `PreviewThumbnailCache: auto-fill complete (${this.cache.size} thumbnails, ${(this.totalMemoryBytes / 1024 / 1024).toFixed(1)}MB)`,
+        );
+        return;
+      }
+
+      // Go left.
+      if (canFetchLeft) {
+        if (!this.has(left)) {
+          await this.fetchAndCache(left);
+        }
+        left -= interval;
+      }
+
+      // Go right.
+      if (canFetchRight) {
+        if (!this.has(right)) {
+          await this.fetchAndCache(right);
+        }
+        right += interval;
+      }
 
       // Yield to main thread to prevent blocking.
-      await this.yieldToMainThread(0);
+      await this.yieldToMainThread();
     }
+  }
 
-    if (!this.autoFillCancelled) {
-      console.log(
-        `PreviewThumbnailCache: auto-fill complete (${fetchedCount} thumbnails, ${(this.totalMemoryBytes / 1024 / 1024).toFixed(1)}MB)`,
-      );
-    }
+  /**
+   * Stops the background linear auto-fill process.
+   */
+  private stopAutoFillLinear() {
+    ++this.linearAsyncId;
   }
 
   /**
@@ -217,46 +308,13 @@ export class PreviewThumbnailCache {
   }
 
   /**
-   * Fetches a thumbnail and adds it to the cache.
-   *
-   * @param timestamp - The timestamp to fetch.
-   * @param videoSink - The video sink to fetch from.
-   * @returns True if fetch was successful.
-   */
-  private async fetchAndCache(
-    timestamp: number,
-    videoSink: CanvasSink,
-  ): Promise<boolean> {
-    try {
-      const canvas = await videoSink.getCanvas(timestamp);
-      if (!canvas) return false;
-
-      const blob = await canvasToThumbnailBlob(canvas.canvas);
-      if (!blob) return false;
-
-      const url = URL.createObjectURL(blob);
-      this.set(timestamp, url, blob.size);
-      return true;
-    } catch (error) {
-      console.error(
-        `PreviewThumbnailCache: error fetching thumbnail at ${formatTimestamp(timestamp)}:`,
-        error,
-      );
-      return false;
-    }
-  }
-
-  /**
    * Yields to the main thread using requestIdleCallback or setTimeout.
    *
-   * @param minDelay - Minimum delay in milliseconds.
    */
-  private yieldToMainThread(minDelay: number): Promise<void> {
+  private yieldToMainThread(): Promise<void> {
     return new Promise((resolve) => {
-      if (minDelay > 0) {
-        setTimeout(resolve, minDelay);
-      } else if ("requestIdleCallback" in window) {
-        requestIdleCallback(() => resolve(), { timeout: 100 });
+      if ("requestIdleCallback" in window) {
+        requestIdleCallback(() => resolve());
       } else {
         setTimeout(resolve, 16); // ~60fps
       }

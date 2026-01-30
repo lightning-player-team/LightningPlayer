@@ -1,15 +1,8 @@
 import { css, keyframes, Theme } from "@emotion/react";
 
-export const thumbnailHeight = 90;
-export const thumbnailWidth = 160;
+export const previewThumbnailHeight = 108;
+export const previewThumbnailWidth = 192;
 const borderRadius = 4;
-
-export const containerStyles = css({
-  alignItems: "center",
-  display: "flex",
-  flexDirection: "column",
-  gap: 4,
-});
 
 const loadingDotPulse = keyframes({
   "0%, 80%, 100%": {
@@ -25,7 +18,7 @@ export const loadingOverlayStyles = css({
   borderRadius,
   display: "flex",
   gap: 6,
-  height: thumbnailHeight,
+  height: previewThumbnailHeight,
   justifyContent: "center",
   left: 0,
   opacity: 0,
@@ -33,7 +26,7 @@ export const loadingOverlayStyles = css({
   position: "absolute",
   top: 0,
   transition: "opacity 150ms ease-in-out",
-  width: thumbnailWidth,
+  width: previewThumbnailWidth,
 
   "&[data-loading='true']": {
     opacity: 1,
@@ -57,9 +50,15 @@ export const loadingDotStyles = css({
   },
 });
 
-export const thumbnailContainerStyles = css({
+export const containerStyles = css({
   position: "relative",
 });
+
+export const tooltipStyles = (theme: Theme) =>
+  css({
+    background: theme.colors.playerControls.tooltip.background,
+    color: theme.colors.playerControls.tooltip.color,
+  });
 
 export const thumbnailStyles = (theme: Theme) =>
   css({
@@ -67,9 +66,9 @@ export const thumbnailStyles = (theme: Theme) =>
     border: `1px solid ${theme.colors.playerControls.previewThumbnail.border}`,
     borderRadius,
     display: "block",
-    height: thumbnailHeight,
+    height: previewThumbnailHeight,
     objectFit: "cover",
-    width: thumbnailWidth,
+    width: previewThumbnailWidth,
   });
 
 export const placeholderStyles = (theme: Theme) =>
@@ -77,9 +76,9 @@ export const placeholderStyles = (theme: Theme) =>
     backgroundColor: theme.colors.playerControls.previewThumbnail.background,
     border: `1px solid ${theme.colors.playerControls.previewThumbnail.border}`,
     borderRadius,
-    height: thumbnailHeight,
+    height: previewThumbnailHeight,
     position: "absolute",
-    width: thumbnailWidth,
+    width: previewThumbnailWidth,
 
     "&[data-initialized='true']": {
       opacity: 0,
@@ -90,7 +89,7 @@ export const timestampStyles = (theme: Theme) =>
   css({
     backgroundColor:
       theme.colors.playerControls.previewThumbnail.timestampBackground,
-    borderRadius: 2,
+    borderRadius: 8,
     color: theme.colors.playerControls.previewThumbnail.timestampColor,
     fontSize: 12,
     fontWeight: 500,

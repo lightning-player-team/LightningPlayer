@@ -7,20 +7,24 @@ export const sliderWidth = 70;
 export const thumbSize = 12;
 const expandedWidth = collapsedWidth + iconSliderGap + sliderWidth;
 
-const transitionDuration = "0.15s";
-const transitionTimingFunction = "ease-in-out";
+export const containerStyles = (theme: Theme) =>
+  css({
+    alignItems: "center",
+    display: "flex",
+    gap: iconSliderGap,
+    height: "100%",
+    transition: `width ${theme.motion.playerControls.button.transitionDuration} ${theme.motion.playerControls.button.transitionTimingFunction}`,
+    width: collapsedWidth,
 
-export const containerStyles = css({
+    "&[data-is-volume-control-expanded=true]": {
+      width: expandedWidth,
+    },
+  });
+
+export const tooltipContainerStyles = css({
   alignItems: "center",
-  display: "flex",
-  gap: iconSliderGap,
-  overflow: "hidden",
-  transition: `width ${transitionDuration} ${transitionTimingFunction}`,
-  width: collapsedWidth,
-
-  "&[data-is-expanded=true]": {
-    width: expandedWidth,
-  },
+  cursor: "pointer",
+  height: "100%",
 });
 
 export const iconButtonStyles = (theme: Theme) =>
@@ -43,26 +47,32 @@ export const iconButtonStyles = (theme: Theme) =>
       transform: `scale(${theme.motion.playerControls.button.foregroundScale})`,
     },
 
-    "[data-is-expanded=true] &": {
+    "[data-is-volume-control-expanded=true] &": {
       color: theme.colors.playerControls.button.foreground,
       transform: `scale(${theme.motion.playerControls.button.foregroundScale})`,
     },
   });
 
-export const sliderContainerStyles = css({
-  alignItems: "center",
-  cursor: "pointer",
-  display: "flex",
-  height: thumbSize,
-  opacity: 0,
-  position: "relative",
-  transition: `opacity ${transitionDuration} ${transitionTimingFunction}`,
-  width: sliderWidth,
+export const sliderContainerStyles = (theme: Theme) =>
+  css({
+    alignItems: "center",
+    display: "flex",
+    height: thumbSize,
+    opacity: 0,
+    position: "relative",
+    transform: "scaleX(0)",
+    transformOrigin: "left",
+    transitionDuration: theme.motion.playerControls.button.transitionDuration,
+    transitionProperty: "opacity, transform",
+    transitionTimingFunction:
+      theme.motion.playerControls.button.transitionTimingFunction,
+    width: sliderWidth,
 
-  "[data-is-expanded=true] &": {
-    opacity: 1,
-  },
-});
+    "[data-is-volume-control-expanded=true] &": {
+      opacity: 1,
+      transform: "scaleX(1)",
+    },
+  });
 
 export const trackStyles = (theme: Theme) =>
   css({
@@ -89,4 +99,19 @@ export const thumbStyles = (theme: Theme) =>
     height: thumbSize,
     position: "absolute",
     width: thumbSize,
+  });
+
+/**
+ * Tooltip styles for VolumeControls - displays above the progress bar.
+ * Offset: 8px (buttonContainer marginTop) + 16px (progressBar height) + 6px (gap) = 30px.
+ * Horizontal positioning is handled dynamically by the Tooltip component via boundsRef.
+ */
+export const tooltipStyles = (theme: Theme) =>
+  css({
+    background: theme.colors.playerControls.tooltip.background,
+    bottom: "100%",
+    color: theme.colors.playerControls.tooltip.color,
+    marginBottom: 30,
+    marginTop: 0,
+    top: "auto",
   });
