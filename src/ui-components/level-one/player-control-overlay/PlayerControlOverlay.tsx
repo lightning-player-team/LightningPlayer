@@ -6,7 +6,7 @@ import { updateProgressBarDOM } from "../../../route-components/player/updatePro
 import { useDimensions } from "../../../shared/hooks/useDimensions";
 import { PlaybackSettings } from "../../base/playback-settings/PlaybackSettings";
 import { PreviewThumbnail } from "../../base/preview-thumbnail/PreviewThumbnail";
-import { thumbnailWidth } from "../../base/preview-thumbnail/PreviewThumbnail.styles";
+import { previewThumbnailWidth } from "../../base/preview-thumbnail/PreviewThumbnail.styles";
 import { Tooltip } from "../../base/tooltip/Tooltip";
 import { VolumeControl } from "../../base/volume-control/VolumeControl";
 import { getProgressFromEvent } from "./getProgressFromEvent";
@@ -217,8 +217,8 @@ export const PlayerControlOverlay: FC<IPlayerControlOverlayProps> = ({
   // not ready, fall back to minLeft which is the position at 0 second.
   const containerWidth = progressBarContainerDimensions?.width ?? 0;
   const rawPosition = (hoverPercentage ?? 0) * containerWidth;
-  const minLeft = thumbnailWidth / 2;
-  const maxLeft = containerWidth - thumbnailWidth / 2;
+  const minLeft = previewThumbnailWidth / 2;
+  const maxLeft = containerWidth - previewThumbnailWidth / 2;
   const previewThumbnailLeft = Math.max(
     minLeft,
     Math.min(maxLeft, rawPosition),

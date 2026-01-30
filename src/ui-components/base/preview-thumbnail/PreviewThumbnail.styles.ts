@@ -1,7 +1,7 @@
 import { css, keyframes, Theme } from "@emotion/react";
 
-export const thumbnailHeight = 90;
-export const thumbnailWidth = 160;
+export const previewThumbnailHeight = 90;
+export const previewThumbnailWidth = 160;
 const borderRadius = 4;
 
 export const containerStyles = css({
@@ -25,7 +25,7 @@ export const loadingOverlayStyles = css({
   borderRadius,
   display: "flex",
   gap: 6,
-  height: thumbnailHeight,
+  height: previewThumbnailHeight,
   justifyContent: "center",
   left: 0,
   opacity: 0,
@@ -33,7 +33,7 @@ export const loadingOverlayStyles = css({
   position: "absolute",
   top: 0,
   transition: "opacity 150ms ease-in-out",
-  width: thumbnailWidth,
+  width: previewThumbnailWidth,
 
   "&[data-loading='true']": {
     opacity: 1,
@@ -67,9 +67,9 @@ export const thumbnailStyles = (theme: Theme) =>
     border: `1px solid ${theme.colors.playerControls.previewThumbnail.border}`,
     borderRadius,
     display: "block",
-    height: thumbnailHeight,
+    height: previewThumbnailHeight,
     objectFit: "cover",
-    width: thumbnailWidth,
+    width: previewThumbnailWidth,
   });
 
 export const placeholderStyles = (theme: Theme) =>
@@ -77,9 +77,9 @@ export const placeholderStyles = (theme: Theme) =>
     backgroundColor: theme.colors.playerControls.previewThumbnail.background,
     border: `1px solid ${theme.colors.playerControls.previewThumbnail.border}`,
     borderRadius,
-    height: thumbnailHeight,
+    height: previewThumbnailHeight,
     position: "absolute",
-    width: thumbnailWidth,
+    width: previewThumbnailWidth,
 
     "&[data-initialized='true']": {
       opacity: 0,

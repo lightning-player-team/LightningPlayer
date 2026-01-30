@@ -1,6 +1,4 @@
-import { CanvasSink } from "mediabunny";
 import { formatTimestamp } from "../../shared/utils/formatTimestamp";
-import { canvasToThumbnailBlob } from "./canvasToBlob";
 import { PreviewThumbnailCache } from "./PreviewThumbnailCache";
 
 /**
@@ -13,55 +11,30 @@ import { PreviewThumbnailCache } from "./PreviewThumbnailCache";
  */
 export const getThumbnail = async ({
   thumbnailCache,
-  thumbnailVideoSink,
   timestamp,
 }: {
-  thumbnailCache: PreviewThumbnailCache | undefined;
-  thumbnailVideoSink: CanvasSink | undefined;
+  thumbnailCache: PreviewThumbnailCache;
   timestamp: number;
 }): Promise<string | undefined> => {
   // Round timestamp to nearest second to match auto-fill cache entries.
   const roundedTimestamp = Math.round(timestamp);
 
   // Check cache first.
-  const cached = thumbnailCache?.get(roundedTimestamp);
+  const cached = thumbnailCache.get(roundedTimestamp);
   if (cached) {
     // console.log(
-    //   `getThumbnail: cache hit for ${formatTimestamp(roundedTimestamp)}`,
+    //   `getThumbnail: cache hit for ${formattedTimestamp}`,
     // );
     return cached;
   }
 
-  if (!thumbnailVideoSink) return undefined;
+  const formattedTimestamp = formatTimestamp(roundedTimestamp);
+  console.log(`getThumbnail: cache miss for ${formattedTimestamp}`);
 
-  console.log(
-    `getThumbnail: cache miss for ${formatTimestamp(roundedTimestamp)}`,
-  );
+  const result = await thumbnailCache.fetchAndCache(roundedTimestamp);
 
-  try {
-    // Fetch at rounded timestamp for consistency with cache.
-    const canvas = await thumbnailVideoSink.getCanvas(roundedTimestamp);
-    if (!canvas) return undefined;
-    const blob = await canvasToThumbnailBlob(canvas.canvas);
-    if (!blob) return undefined;
-
-    const url = URL.createObjectURL(blob);
-
-    // Add to cache at rounded timestamp.
-    if (thumbnailCache) {
-      thumbnailCache.set(roundedTimestamp, url, blob.size);
-    }
-
-    return url;
-  } catch (error) {
-    if (!thumbnailVideoSink) {
-      console.log(`getThumbnail: videoSink unmounted`);
-    } else {
-      console.error(
-        `Error fetching thumbnail for ${roundedTimestamp}s:`,
-        error,
-      );
-    }
-    return undefined;
-  }
+  // if (result) {
+  //   console.log(`getThumbnail: cache set for ${formattedTimestamp}`);
+  // }
+  return result;
 };
