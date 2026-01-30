@@ -6,7 +6,14 @@ export interface IPlaybackSettingsProps {
 }
 
 /**
- * A YouTube-style popup settings menu that appears near the settings button.
+ * TODO:
+ *
+ * 1. Fix settings button.
+ * 2. Implement PlaybackSettings with two settings: 1. Pin controls 2. Rotate.
+ */
+
+/**
+ * A popup settings menu that appears above the progress bar, on top of the settings button.
  *
  * @param props - The component props.
  * @param props.onClose - Callback invoked when clicking outside the settings menu.

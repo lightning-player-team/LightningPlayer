@@ -1,15 +1,11 @@
 import { SerializedStyles, Theme } from "@emotion/react";
 import { FC, ReactNode, Ref, RefObject, useRef, useState } from "react";
 import { passMultipleRefs } from "../../../shared/utils/passMultipleRefs";
-import { tooltipContainerStyles, tooltipStyles } from "./Tooltip.styles";
-
-/**
- * TODO:
- *
- * 1. Update PreviewThumbnail.
- * 2. Fix settings button.
- * 3. Implement PlaybackSettings with two settings: 1. Pin controls 2. Rotate.
- */
+import {
+  tooltipContainerStyles,
+  tooltipDefaultMarginTop,
+  tooltipStyles,
+} from "./Tooltip.styles";
 
 export interface ITooltipProps {
   /**
@@ -92,12 +88,14 @@ export const Tooltip: FC<ITooltipProps> = ({
       setHorizontalOffset(0);
     }
 
-    // Auto-flip logic: check if bottom clips viewport.
-    // Skip if className override is provided.
+    // Check if tooltip would be clipped by window and flip to top.
+    // Only enabled for automatic positioning; ignore when style override exists.
     if (!tooltipStylesOverride) {
       const tooltipHeight = tooltip.offsetHeight;
       const spaceBelow = window.innerHeight - containerRect.bottom;
-      setPosition(spaceBelow < tooltipHeight + 6 ? "top" : "bottom");
+      setPosition(
+        spaceBelow < tooltipHeight + tooltipDefaultMarginTop ? "top" : "bottom",
+      );
     }
   };
 

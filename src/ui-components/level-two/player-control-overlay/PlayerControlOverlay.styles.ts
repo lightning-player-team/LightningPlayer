@@ -1,7 +1,7 @@
 import { css, Theme } from "@emotion/react";
 import {
   tooltipDefaultHeight,
-  tooltopDefaultMarginTop,
+  tooltipDefaultMarginTop,
 } from "../../base/tooltip/Tooltip.styles";
 
 const progressBarTrackHeight = 3;
@@ -187,7 +187,7 @@ export const previewThumbnailContainerStyles = (theme: Theme) =>
   css({
     bottom: "100%",
     marginBottom:
-      tooltipMarginBottom + tooltipDefaultHeight + tooltopDefaultMarginTop,
+      tooltipMarginBottom + tooltipDefaultHeight + tooltipDefaultMarginTop,
     opacity: 0,
     pointerEvents: "none",
     position: "absolute",

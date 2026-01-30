@@ -2,7 +2,7 @@ import { css, Theme } from "@emotion/react";
 import { ZIndex } from "../../../shared/styles/zIndex";
 
 export const tooltipDefaultHeight = 28;
-export const tooltopDefaultMarginTop = 6;
+export const tooltipDefaultMarginTop = 6;
 
 export const tooltipContainerStyles = css({
   display: "flex",
@@ -24,7 +24,7 @@ export const tooltipStyles = (theme: Theme) =>
     height: tooltipDefaultHeight,
     justifyContent: "center",
     left: "50%",
-    marginTop: tooltopDefaultMarginTop,
+    marginTop: tooltipDefaultMarginTop,
     opacity: 0,
     padding: "6px 10px",
     pointerEvents: "none",
@@ -45,7 +45,7 @@ export const tooltipStyles = (theme: Theme) =>
     },
 
     // Auto-flip to top when data-position="top".
-    "&[data-tooltip--position=top]": {
+    "&[data-tooltip-position=top]": {
       bottom: "100%",
       marginBottom: 6,
       marginTop: 0,
