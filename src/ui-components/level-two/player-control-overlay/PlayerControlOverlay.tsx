@@ -8,7 +8,7 @@ import { PlaybackSettings } from "../../base/playback-settings/PlaybackSettings"
 import { PreviewThumbnail } from "../../base/preview-thumbnail/PreviewThumbnail";
 import { previewThumbnailWidth } from "../../base/preview-thumbnail/PreviewThumbnail.styles";
 import { Tooltip } from "../../base/tooltip/Tooltip";
-import { VolumeControl } from "../../base/volume-control/VolumeControl";
+import { VolumeControl } from "../../level-one/volume-control/VolumeControl";
 import { getProgressFromEvent } from "./getProgressFromEvent";
 import { getProgressPercentageFromEvent } from "./getProgressPercentageFromEvent";
 import {
@@ -27,6 +27,7 @@ import {
   progressBarTrackStyles,
   rightContainerStyles,
   settingsButtonStyles,
+  tooltipContainerStyles,
   topContainerStyles,
 } from "./PlayerControlOverlay.styles";
 
@@ -89,9 +90,12 @@ export const PlayerControlOverlay: FC<IPlayerControlOverlayProps> = ({
   // Applies hover styles to progress bar.
   const [isProgressBarHovered, setIsProgressBarHovered] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  // The VolumeControl is pinned when the user makes an update to the volume.
+  // The VolumeControl is hard pinned when the user makes an update to the volume.
   // It stays pinned until the user interacts with another player control element.
-  const [isVolumePinned, setIsVolumePinned] = useState(false);
+  const [isVCHardPinned, setIsVCHardPinned] = useState(false);
+  // The VolumeControl is soft pinned when the user hovers over it.
+  // It stays pinned until the user moves outside of the left container.
+  const [isVCSoftPinned, setIsVCSoftPinned] = useState(false);
 
   const progressBarContainerRef = useRef<HTMLDivElement>(null);
   const progressBarContainerDimensions = useDimensions(progressBarContainerRef);
@@ -99,7 +103,7 @@ export const PlayerControlOverlay: FC<IPlayerControlOverlayProps> = ({
   /** Play button toggles playback. */
   const handleOnClickPlayButton = () => {
     setIsSettingsOpen(false);
-    setIsVolumePinned(false);
+    setIsVCHardPinned(false);
     if (!isPlaying) {
       play();
     } else {
@@ -109,7 +113,7 @@ export const PlayerControlOverlay: FC<IPlayerControlOverlayProps> = ({
 
   const handleOnClickSettingsButton = () => {
     setIsSettingsOpen(!isSettingsOpen);
-    setIsVolumePinned(false);
+    setIsVCHardPinned(false);
   };
 
   /** Clicking on the overlay toggles playback. */
@@ -149,7 +153,7 @@ export const PlayerControlOverlay: FC<IPlayerControlOverlayProps> = ({
   ) => {
     if (event.button !== 0) return;
     event.preventDefault();
-    setIsVolumePinned(false);
+    setIsVCHardPinned(false);
 
     const newProgress = getProgressFromEvent({
       duration,
@@ -213,6 +217,13 @@ export const PlayerControlOverlay: FC<IPlayerControlOverlayProps> = ({
     setHoverPercentage(percentage);
   };
 
+  const handleOnMouseEnterVolumeControl = () => {
+    setIsVCSoftPinned(true);
+  };
+  const handleOnMouseLeaveLeftContainer = () => {
+    setIsVCSoftPinned(false);
+  };
+
   // Calculate previewThumbnailLeft. When progressBarContainerDimensions is
   // not ready, fall back to minLeft which is the position at 0 second.
   const containerWidth = progressBarContainerDimensions?.width ?? 0;
@@ -271,13 +282,17 @@ export const PlayerControlOverlay: FC<IPlayerControlOverlayProps> = ({
         </div>
         {/* Button controls */}
         <div css={buttonContainerStyles}>
-          <div css={leftContainerStyles}>
+          <div
+            onMouseLeave={handleOnMouseLeaveLeftContainer}
+            css={leftContainerStyles}
+          >
             <VolumeControl
               isMuted={isMuted}
-              isPinned={isVolumePinned}
+              isPinned={isVCHardPinned || isVCSoftPinned}
+              onMouseEnter={handleOnMouseEnterVolumeControl}
               onMuteToggle={onMuteToggle}
               onVolumeChange={onVolumeChange}
-              setIsPinned={setIsVolumePinned}
+              setIsPinned={setIsVCHardPinned}
               toolTipBoundsRef={progressBarContainerRef}
               volume={volume}
             />
@@ -285,8 +300,10 @@ export const PlayerControlOverlay: FC<IPlayerControlOverlayProps> = ({
           <div css={centerContainerStyles}>
             <Tooltip
               boundsRef={progressBarContainerRef}
+              css={tooltipContainerStyles}
+              // showTooltip={true}
               text={isPlaying ? "Pause" : "Play"}
-              css={playerControlTooltipStyles}
+              tooltipStylesOverride={playerControlTooltipStyles}
             >
               <button
                 aria-label={isPlaying ? "Pause" : "Play"}
@@ -300,8 +317,10 @@ export const PlayerControlOverlay: FC<IPlayerControlOverlayProps> = ({
           <div css={rightContainerStyles}>
             <Tooltip
               boundsRef={progressBarContainerRef}
+              css={tooltipContainerStyles}
+              // showTooltip={true}
               text="Settings"
-              css={playerControlTooltipStyles}
+              tooltipStylesOverride={playerControlTooltipStyles}
             >
               <button
                 aria-label="Settings"

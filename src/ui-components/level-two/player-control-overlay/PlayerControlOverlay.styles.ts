@@ -1,4 +1,8 @@
 import { css, Theme } from "@emotion/react";
+import {
+  tooltipDefaultHeight,
+  tooltopDefaultMarginTop,
+} from "../../base/tooltip/Tooltip.styles";
 
 const progressBarTrackHeight = 3;
 const progressBarTrackExpandedHeight = 5;
@@ -116,14 +120,21 @@ export const progressBarTrackFillStyles = (theme: Theme) =>
 
 // Height matches the play button (fontSize 36) for consistent tooltip positioning.
 const buttonContainerHeight = 36;
+const buttonContainerMarginTop = 8;
 
 export const buttonContainerStyles = css({
   alignItems: "center",
   display: "grid",
   gridTemplateColumns: "1fr auto 1fr",
   marginBottom: 12,
-  marginTop: 8,
+  marginTop: buttonContainerMarginTop,
   width: "100%",
+});
+
+export const tooltipContainerStyles = css({
+  alignItems: "center",
+  cursor: "pointer",
+  height: "100%",
 });
 
 export const leftContainerStyles = css({
@@ -169,10 +180,14 @@ export const playButtonStyles = (theme: Theme) =>
     },
   });
 
+// Distance between tooltips and the progress bar.
+const tooltipMarginBottom = 6;
+
 export const previewThumbnailContainerStyles = (theme: Theme) =>
   css({
     bottom: "100%",
-    marginBottom: 8,
+    marginBottom:
+      tooltipMarginBottom + tooltipDefaultHeight + tooltopDefaultMarginTop,
     opacity: 0,
     pointerEvents: "none",
     position: "absolute",
@@ -186,7 +201,6 @@ export const previewThumbnailContainerStyles = (theme: Theme) =>
 
 /**
  * Tooltip styles for player controls - displays above the progress bar.
- * Offset: 8px (buttonContainer marginTop) + 16px (progressBar height) + 6px (gap) = 30px.
  * Horizontal positioning is handled dynamically by the Tooltip component via boundsRef.
  */
 export const playerControlTooltipStyles = (theme: Theme) =>
@@ -194,7 +208,10 @@ export const playerControlTooltipStyles = (theme: Theme) =>
     background: theme.colors.playerControls.tooltip.background,
     bottom: "100%",
     color: theme.colors.playerControls.tooltip.color,
-    marginBottom: 30,
+    marginBottom:
+      buttonContainerMarginTop +
+      progressBarContainerHeight +
+      tooltipMarginBottom,
     marginTop: 0,
     top: "auto",
   });

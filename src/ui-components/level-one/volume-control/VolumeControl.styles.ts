@@ -7,21 +7,24 @@ export const sliderWidth = 70;
 export const thumbSize = 12;
 const expandedWidth = collapsedWidth + iconSliderGap + sliderWidth;
 
-const transitionDuration = "0.15s";
-const transitionTimingFunction = "ease-in-out";
+export const containerStyles = (theme: Theme) =>
+  css({
+    alignItems: "center",
+    display: "flex",
+    gap: iconSliderGap,
+    height: "100%",
+    transition: `width ${theme.motion.playerControls.button.transitionDuration} ${theme.motion.playerControls.button.transitionTimingFunction}`,
+    width: collapsedWidth,
 
-export const containerStyles = css({
+    "&[data-is-volume-control-expanded=true]": {
+      width: expandedWidth,
+    },
+  });
+
+export const tooltipContainerStyles = css({
   alignItems: "center",
-  display: "flex",
+  cursor: "pointer",
   height: "100%",
-  gap: iconSliderGap,
-  // overflow: "hidden",
-  transition: `width ${transitionDuration} ${transitionTimingFunction}`,
-  width: collapsedWidth,
-
-  "&[data-is-volume-control-expanded=true]": {
-    width: expandedWidth,
-  },
 });
 
 export const iconButtonStyles = (theme: Theme) =>
@@ -50,20 +53,26 @@ export const iconButtonStyles = (theme: Theme) =>
     },
   });
 
-export const sliderContainerStyles = css({
-  alignItems: "center",
-  cursor: "pointer",
-  display: "flex",
-  height: thumbSize,
-  opacity: 0,
-  position: "relative",
-  transition: `opacity ${transitionDuration} ${transitionTimingFunction}`,
-  width: sliderWidth,
+export const sliderContainerStyles = (theme: Theme) =>
+  css({
+    alignItems: "center",
+    display: "flex",
+    height: thumbSize,
+    opacity: 0,
+    position: "relative",
+    transform: "scaleX(0)",
+    transformOrigin: "left",
+    transitionDuration: theme.motion.playerControls.button.transitionDuration,
+    transitionProperty: "opacity, transform",
+    transitionTimingFunction:
+      theme.motion.playerControls.button.transitionTimingFunction,
+    width: sliderWidth,
 
-  "[data-is-volume-control-expanded=true] &": {
-    opacity: 1,
-  },
-});
+    "[data-is-volume-control-expanded=true] &": {
+      opacity: 1,
+      transform: "scaleX(1)",
+    },
+  });
 
 export const trackStyles = (theme: Theme) =>
   css({

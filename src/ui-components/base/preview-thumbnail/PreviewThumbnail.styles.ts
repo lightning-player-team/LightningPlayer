@@ -1,15 +1,8 @@
 import { css, keyframes, Theme } from "@emotion/react";
 
-export const previewThumbnailHeight = 90;
-export const previewThumbnailWidth = 160;
+export const previewThumbnailHeight = 108;
+export const previewThumbnailWidth = 192;
 const borderRadius = 4;
-
-export const containerStyles = css({
-  alignItems: "center",
-  display: "flex",
-  flexDirection: "column",
-  gap: 4,
-});
 
 const loadingDotPulse = keyframes({
   "0%, 80%, 100%": {
@@ -57,9 +50,15 @@ export const loadingDotStyles = css({
   },
 });
 
-export const thumbnailContainerStyles = css({
+export const containerStyles = css({
   position: "relative",
 });
+
+export const tooltipStyles = (theme: Theme) =>
+  css({
+    background: theme.colors.playerControls.tooltip.background,
+    color: theme.colors.playerControls.tooltip.color,
+  });
 
 export const thumbnailStyles = (theme: Theme) =>
   css({

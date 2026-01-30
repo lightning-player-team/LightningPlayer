@@ -1,13 +1,13 @@
 import { FC, useEffect, useRef, useState } from "react";
 import { formatTimestamp } from "../../../shared/utils/formatTimestamp";
+import { Tooltip } from "../tooltip/Tooltip";
 import {
   containerStyles,
   loadingDotStyles,
   loadingOverlayStyles,
   placeholderStyles,
-  thumbnailContainerStyles,
   thumbnailStyles,
-  timestampStyles,
+  tooltipStyles,
 } from "./PreviewThumbnail.styles";
 
 export interface IPreviewThumbnailProps {
@@ -71,8 +71,12 @@ export const PreviewThumbnail: FC<IPreviewThumbnailProps> = ({
   const isLoading = currentThumbnailTimestamp !== roundedTimestamp;
 
   return (
-    <div css={containerStyles}>
-      <div css={thumbnailContainerStyles}>
+    <Tooltip
+      showTooltip={true}
+      text={formatTimestamp(roundedTimestamp)}
+      tooltipStylesOverride={tooltipStyles}
+    >
+      <div css={containerStyles}>
         <div
           css={placeholderStyles}
           data-initialized={currentThumbnailTimestamp !== undefined}
@@ -89,7 +93,6 @@ export const PreviewThumbnail: FC<IPreviewThumbnailProps> = ({
           <div css={loadingDotStyles} />
         </div>
       </div>
-      <span css={timestampStyles}>{formatTimestamp(roundedTimestamp)}</span>
-    </div>
+    </Tooltip>
   );
 };

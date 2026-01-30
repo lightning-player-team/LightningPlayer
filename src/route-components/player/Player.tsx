@@ -15,7 +15,7 @@ import { volumeState } from "../../shared/atoms/volumeState";
 import { useDimensions } from "../../shared/hooks/useDimensions";
 import { IDimensions } from "../../shared/types/dimensions";
 import { FullscreenContainer } from "../../ui-components/base/fullscreen-container/FullscreenContainer";
-import { PlayerControlOverlay } from "../../ui-components/level-one/player-control-overlay/PlayerControlOverlay";
+import { PlayerControlOverlay } from "../../ui-components/level-two/player-control-overlay/PlayerControlOverlay";
 import { draw } from "./draw";
 import { getThumbnail } from "./getThumbnail";
 import { PlaybackClock } from "./PlaybackClock";

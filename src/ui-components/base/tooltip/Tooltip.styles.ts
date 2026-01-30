@@ -1,24 +1,30 @@
 import { css, Theme } from "@emotion/react";
 import { ZIndex } from "../../../shared/styles/zIndex";
 
+export const tooltipDefaultHeight = 28;
+export const tooltopDefaultMarginTop = 6;
+
 export const tooltipContainerStyles = css({
-  alignItems: "center",
   display: "flex",
-  height: "100%",
   position: "relative",
 });
 
 /**
  * Default position: bottom (below trigger), auto-flips to top via data attribute.
  */
-export const tooltipContentStyles = (theme: Theme) =>
+export const tooltipStyles = (theme: Theme) =>
   css({
+    alignItems: "center",
     backgroundColor: theme.colors.tooltip.background,
     borderRadius: 8,
+    boxSizing: "border-box",
     color: theme.colors.tooltip.color,
+    display: "flex",
     fontSize: 12,
+    height: tooltipDefaultHeight,
+    justifyContent: "center",
     left: "50%",
-    marginTop: 6,
+    marginTop: tooltopDefaultMarginTop,
     opacity: 0,
     padding: "6px 10px",
     pointerEvents: "none",

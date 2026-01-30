@@ -1,10 +1,11 @@
-import { FC, ReactNode, RefObject, useCallback, useRef, useState } from "react";
-import { tooltipContainerStyles, tooltipContentStyles } from "./Tooltip.styles";
+import { SerializedStyles, Theme } from "@emotion/react";
+import { FC, ReactNode, Ref, RefObject, useRef, useState } from "react";
+import { passMultipleRefs } from "../../../shared/utils/passMultipleRefs";
+import { tooltipContainerStyles, tooltipStyles } from "./Tooltip.styles";
 
 /**
  * TODO:
  *
- * 0. Moving: PlayerControlOverlay -> level-two, TitleBar & VolumeControl -> level-one.
  * 1. Update PreviewThumbnail.
  * 2. Fix settings button.
  * 3. Implement PlaybackSettings with two settings: 1. Pin controls 2. Rotate.
@@ -18,12 +19,17 @@ export interface ITooltipProps {
   boundsRef?: RefObject<HTMLElement | null>;
   /** Trigger element. */
   children: ReactNode;
-  /** Style override for tooltip content (from css prop). */
+  /** Style override for the outmost container. */
   className?: string;
+  ref?: Ref<HTMLElement>;
   /** Optional flag to show the tooltip in addition to hover state. */
   showTooltip?: boolean;
   /** Tooltip text. */
   text: string;
+  /** Style override for tooltip content. */
+  tooltipStylesOverride?:
+    | SerializedStyles
+    | ((theme: Theme) => SerializedStyles);
 }
 
 /**
@@ -41,8 +47,10 @@ export const Tooltip: FC<ITooltipProps> = ({
   boundsRef,
   children,
   className,
+  ref,
   showTooltip,
   text,
+  tooltipStylesOverride,
 }) => {
   const [isHovered, setIsHovered] = useState(false);
   const [position, setPosition] = useState<"bottom" | "top">("bottom");
@@ -51,7 +59,7 @@ export const Tooltip: FC<ITooltipProps> = ({
   const containerRef = useRef<HTMLDivElement>(null);
   const tooltipRef = useRef<HTMLDivElement>(null);
 
-  const handleMouseEnter = useCallback(() => {
+  const handleMouseEnter = () => {
     setIsHovered(true);
 
     const container = containerRef.current;
@@ -86,16 +94,16 @@ export const Tooltip: FC<ITooltipProps> = ({
 
     // Auto-flip logic: check if bottom clips viewport.
     // Skip if className override is provided.
-    if (!className) {
+    if (!tooltipStylesOverride) {
       const tooltipHeight = tooltip.offsetHeight;
       const spaceBelow = window.innerHeight - containerRect.bottom;
       setPosition(spaceBelow < tooltipHeight + 6 ? "top" : "bottom");
     }
-  }, [boundsRef, className]);
+  };
 
-  const handleMouseLeave = useCallback(() => {
+  const handleMouseLeave = () => {
     setIsHovered(false);
-  }, []);
+  };
 
   // Calculate transform with horizontal offset.
   const transform =
@@ -105,17 +113,17 @@ export const Tooltip: FC<ITooltipProps> = ({
 
   return (
     <div
+      className={className}
       css={tooltipContainerStyles}
       data-is-hovered={isHovered}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
-      ref={containerRef}
+      ref={passMultipleRefs([containerRef, ref])}
     >
       {children}
       <div
-        className={className}
-        css={tooltipContentStyles}
-        data-tooltip-position={className ? undefined : position}
+        css={[tooltipStyles, tooltipStylesOverride]}
+        data-tooltip-position={tooltipStylesOverride ? undefined : position}
         data-show-tooltip={!!showTooltip}
         ref={tooltipRef}
         style={{ transform }}

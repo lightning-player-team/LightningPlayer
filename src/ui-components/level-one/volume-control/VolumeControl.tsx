@@ -11,7 +11,7 @@ import Speaker0Icon from "../../../assets/svgs/speaker-0.svg?react";
 import Speaker1Icon from "../../../assets/svgs/speaker-1.svg?react";
 import Speaker2Icon from "../../../assets/svgs/speaker-2.svg?react";
 import SpeakerMuteIcon from "../../../assets/svgs/speaker-mute.svg?react";
-import { Tooltip } from "../tooltip/Tooltip";
+import { Tooltip } from "../../base/tooltip/Tooltip";
 import { getVolumeFromEvent } from "./getVolumeFromEvent";
 import {
   containerStyles,
@@ -21,6 +21,7 @@ import {
   sliderWidth,
   thumbSize,
   thumbStyles,
+  tooltipContainerStyles,
   tooltipStyles,
   trackStyles,
 } from "./VolumeControl.styles";
@@ -32,6 +33,7 @@ export interface IVolumeControlProps {
    * It stays pinned until the user interacts with another player control element.
    */
   isPinned: boolean;
+  onMouseEnter: () => void;
   onMuteToggle: () => void;
   /**
    * @param volume goes from 0 to 1.
@@ -45,6 +47,7 @@ export interface IVolumeControlProps {
 export const VolumeControl: FC<IVolumeControlProps> = ({
   isMuted,
   isPinned,
+  onMouseEnter,
   onMuteToggle,
   onVolumeChange,
   setIsPinned,
@@ -60,6 +63,7 @@ export const VolumeControl: FC<IVolumeControlProps> = ({
 
   const handleMouseEnter = () => {
     setIsHovered(true);
+    onMouseEnter();
   };
 
   const handleMouseLeave = () => {
@@ -132,8 +136,10 @@ export const VolumeControl: FC<IVolumeControlProps> = ({
     >
       <Tooltip
         boundsRef={toolTipBoundsRef}
+        css={tooltipContainerStyles}
+        // showTooltip={true}
         text={speakerAriaLabel}
-        css={tooltipStyles}
+        tooltipStylesOverride={tooltipStyles}
       >
         <button
           aria-label={speakerAriaLabel}
@@ -146,11 +152,13 @@ export const VolumeControl: FC<IVolumeControlProps> = ({
       </Tooltip>
       <Tooltip
         boundsRef={toolTipBoundsRef}
-        css={[tooltipStyles]}
+        css={tooltipContainerStyles}
+        ref={sliderRef}
         showTooltip={isDragging}
         text={sliderAriaLabel}
+        tooltipStylesOverride={tooltipStyles}
       >
-        <div css={sliderContainerStyles} ref={sliderRef}>
+        <div css={sliderContainerStyles}>
           <div css={trackStyles} />
           <div css={fillStyles} style={{ width: thumbPosition }} />
           <div css={thumbStyles} style={{ left: thumbPosition }} />
