@@ -1,4 +1,4 @@
-import { useAtom, useAtomValue } from "jotai";
+import { useAtom, useAtomValue, useSetAtom } from "jotai";
 import {
   ALL_FORMATS,
   AudioBufferSink,
@@ -10,6 +10,7 @@ import {
 } from "mediabunny";
 import { FC, useCallback, useEffect, useRef, useState } from "react";
 import { inputFilesState } from "../../shared/atoms/inputFilesState";
+import { titleBarTextState } from "../../shared/atoms/titleBarTextState";
 import { isMutedState } from "../../shared/atoms/isMutedState";
 import { volumeState } from "../../shared/atoms/volumeState";
 import { useDimensions } from "../../shared/hooks/useDimensions";
@@ -27,6 +28,8 @@ import { updateProgressBarDOM } from "./updateProgressBarDOM";
 
 export const Player: FC = () => {
   const files = useAtomValue(inputFilesState);
+  const currentPlayingFile = files[0];
+  const setTitleBarText = useSetAtom(titleBarTextState);
   const [isMuted, setIsMuted] = useAtom(isMutedState);
   const [volume, setVolume] = useAtom(volumeState);
 
@@ -92,6 +95,11 @@ export const Player: FC = () => {
     // Dispose iterators.
     audioBufferIteratorRef.current?.return();
     videoFrameIteratorRef.current?.return();
+    // Clear the canvas.
+    if (canvasRef.current) {
+      const ctx = canvasRef.current?.getContext("2d");
+      ctx?.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
+    }
   };
 
   const play = async () => {
@@ -235,11 +243,11 @@ export const Player: FC = () => {
   useEffect(() => {
     let cancelled = false;
 
-    console.log("files:", files);
+    console.log("file:", currentPlayingFile);
 
     const loadFile = async () => {
-      if (!files || files.length <= 0) {
-        console.error("loadFile: no files provided to Player.");
+      if (!currentPlayingFile) {
+        console.error("loadFile: no file provided to Player.");
         return;
       }
 
@@ -261,7 +269,7 @@ export const Player: FC = () => {
 
       const input = new Input({
         formats: ALL_FORMATS,
-        source: new BlobSource(files[0]),
+        source: new BlobSource(currentPlayingFile),
       });
 
       const videoTracks = await input.getVideoTracks();
@@ -341,7 +349,7 @@ export const Player: FC = () => {
       cleanupPlayback();
       thumbnailCacheRef.current?.dispose();
     };
-  }, [files]);
+  }, [currentPlayingFile]);
 
   // Start render loop after file is loaded.
   useEffect(() => {
@@ -431,6 +439,14 @@ export const Player: FC = () => {
     };
   }, [duration]);
 
+  // Update title bar text with the current file name.
+  useEffect(() => {
+    setTitleBarText(currentPlayingFile?.name ?? "");
+    return () => {
+      setTitleBarText("");
+    };
+  }, [currentPlayingFile, setTitleBarText]);
+
   // Playback cleanup on unmount only.
   useEffect(() => {
     return () => {
@@ -484,8 +500,8 @@ export const Player: FC = () => {
     [],
   );
 
-  if (!files) {
-    return;
+  if (!currentPlayingFile) {
+    return null;
   }
 
   return (

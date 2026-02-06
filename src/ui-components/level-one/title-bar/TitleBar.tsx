@@ -1,15 +1,21 @@
 import { TauriEvent } from "@tauri-apps/api/event";
 import { getCurrentWindow } from "@tauri-apps/api/window";
-import { useAtom } from "jotai";
-import { FC, useEffect, useRef, useState } from "react";
+import { useAtom, useAtomValue } from "jotai";
+import { FC, MouseEventHandler, useEffect, useRef, useState } from "react";
+import { useLocation, useNavigate } from "react-router";
+import ArrowLeftIcon from "../../../assets/svgs/arrow-left.svg?react";
 import CloseIcon from "../../../assets/svgs/close.svg?react";
 import MaximizeIcon from "../../../assets/svgs/maximize.svg?react";
 import MinimizeIcon from "../../../assets/svgs/minimize.svg?react";
 import PinIcon from "../../../assets/svgs/pin.svg?react";
 import RestoreIcon from "../../../assets/svgs/restore.svg?react";
 import UnpinIcon from "../../../assets/svgs/unpin.svg?react";
+import { ROUTES } from "../../../route-components/routes";
 import { titleBarPinnedState } from "../../../shared/atoms/titleBarPinnedState";
+import { titleBarTextState } from "../../../shared/atoms/titleBarTextState";
 import {
+  dragRegionStyles,
+  navigationControlsContainerStyles,
   pinnedContainerStyles,
   titleBarContainerStyles,
   windowControlsContainerStyles,
@@ -23,6 +29,10 @@ enum HoverState {
 
 export const TitleBar: FC = () => {
   const appWindow = getCurrentWindow();
+  const location = useLocation();
+  const navigate = useNavigate();
+  const canGoBack = location.pathname !== ROUTES.root;
+  const titleBarText = useAtomValue(titleBarTextState);
   // Dragging uses OS native apis and :hover doesn't work while dragging. In
   // addition, after a mouseDown from left button, the OS takes control of dragging,
   // and mouseUp events are not fired for the webview. So we need to track the hover
@@ -39,6 +49,7 @@ export const TitleBar: FC = () => {
   const [isFocused, setIsFocused] = useState<boolean>(true);
   const [isPinned, setIsPinned] = useAtom(titleBarPinnedState);
   const maximizeButtonRef = useRef<HTMLButtonElement>(null);
+  const dragRegionRef = useRef<HTMLDivElement>(null);
 
   // Update isMaximized when Window is resized.
   useEffect(() => {
@@ -51,7 +62,7 @@ export const TitleBar: FC = () => {
 
     const promiseUnlisten = appWindow.listen(
       TauriEvent.WINDOW_RESIZED,
-      handleResize
+      handleResize,
     );
     return () => {
       promiseUnlisten.then((unlistenFn) => unlistenFn());
@@ -69,7 +80,7 @@ export const TitleBar: FC = () => {
 
     const unlistenFocus = appWindow.listen(
       TauriEvent.WINDOW_FOCUS,
-      handleFocus
+      handleFocus,
     );
     const unlistenBlur = appWindow.listen(TauriEvent.WINDOW_BLUR, handleFocus);
     return () => {
@@ -103,11 +114,16 @@ export const TitleBar: FC = () => {
     }
   };
   const handleOnMouseDownButton = (
-    event: React.MouseEvent<HTMLButtonElement>
+    event: React.MouseEvent<HTMLButtonElement>,
   ) => {
     // Prevent propagating mouseDown to title bar and therefore
     // updating the hover state.
     event.stopPropagation();
+  };
+
+  // Navigation button event handler.
+  const handleOnBackClick = () => {
+    navigate("..");
   };
 
   // Button event handlers.
@@ -124,6 +140,22 @@ export const TitleBar: FC = () => {
     appWindow.close();
   };
 
+  // Drag handler.
+  const handleOnDragRegionMouseDOwn: MouseEventHandler<HTMLDivElement> = (
+    event,
+  ) => {
+    // Primary (left) button
+    if (event.buttons === 1) {
+      if (event.detail === 2) {
+        // Maximize on double click
+        appWindow.toggleMaximize();
+      } else {
+        // Else start dragging
+        appWindow.startDragging();
+      }
+    }
+  };
+
   return (
     <div
       css={[titleBarContainerStyles, isPinned && pinnedContainerStyles]}
@@ -133,7 +165,25 @@ export const TitleBar: FC = () => {
       onMouseEnter={handleOnMouseEnterTitleBar}
       onMouseLeave={handleOnMouseLeaveTitleBar}
     >
-      <div data-tauri-drag-region />
+      <div css={navigationControlsContainerStyles}>
+        {canGoBack && (
+          <button
+            id="titlebar-back"
+            onClick={handleOnBackClick}
+            onMouseDown={handleOnMouseDownButton}
+            title="back"
+          >
+            <ArrowLeftIcon />
+          </button>
+        )}
+      </div>
+      <div
+        css={dragRegionStyles}
+        onMouseDown={handleOnDragRegionMouseDOwn}
+        ref={dragRegionRef}
+      >
+        {titleBarText && <span>{titleBarText}</span>}
+      </div>
       <div css={windowControlsContainerStyles}>
         <button
           id="titlebar-pin"

@@ -28,8 +28,10 @@ export const Home: FC = () => {
     const files = event.target.files;
     if (files && files.length) {
       console.log("Selected files:", files);
-      handleInputFiles({ files, setInputFiles });
-      navigate(ROUTES.player);
+      const filteredFiles = handleInputFiles({ files, setInputFiles });
+      if (filteredFiles.length) {
+        navigate(ROUTES.player);
+      }
     }
   };
 

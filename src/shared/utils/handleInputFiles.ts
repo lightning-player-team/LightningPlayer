@@ -1,6 +1,13 @@
 import { SetStateAction, useSetAtom } from "jotai";
 
-// TODO: implement file type and validation checks
+/**
+ * Processes input files from file selection or drag-and-drop.
+ * Filters to only include audio and video media types.
+ *
+ * @param params.files - The FileList from the input event.
+ * @param params.setInputFiles - Jotai setter for the inputFilesState atom.
+ * @returns An array of media Files, or an empty array if none are valid.
+ */
 export const handleInputFiles = ({
   files,
   setInputFiles,
@@ -14,9 +21,11 @@ export const handleInputFiles = ({
     console.error("handleInputFiles: empty.");
     return [];
   }
-  const filteredFiles = [...files];
+  const filteredFiles = [...files].filter(
+    (file) => file.type.startsWith("audio/") || file.type.startsWith("video/"),
+  );
   setInputFiles(filteredFiles);
-  console.log("handleInputFiles: ", filteredFiles);
+  console.log("handleInputFiles:", filteredFiles);
 
   return filteredFiles;
 };

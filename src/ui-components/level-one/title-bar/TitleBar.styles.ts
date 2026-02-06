@@ -6,7 +6,7 @@ export const titleBarContainerStyles = (theme: Theme) =>
   css({
     backgroundColor: theme.colors.titleBar.inactiveBackground,
     display: "grid",
-    gridTemplateColumns: "auto max-content",
+    gridTemplateColumns: "max-content auto max-content",
     height: TITLE_BAR_HEIGHT,
     left: 0,
     opacity: 0,
@@ -28,31 +28,66 @@ export const pinnedContainerStyles = css({
   opacity: 1,
 });
 
+const titleBarButtonStyles = (theme: Theme) => ({
+  alignItems: "center" as const,
+  appearance: "none" as const,
+  backgroundColor: "transparent",
+  border: "none",
+  color: theme.colors.titleBar.inactiveForeground,
+  display: "inline-flex",
+  fontSize: 16,
+  height: TITLE_BAR_HEIGHT,
+  justifyContent: "center",
+  margin: 0,
+  padding: 0,
+  width: 48,
+  "&:hover": {
+    background: theme.colors.titleBar.hoverBackground,
+  },
+  "&:active": {
+    background: theme.colors.titleBar.pressedBackground,
+  },
+
+  "[data-is-focused=true] > &": {
+    color: theme.colors.titleBar.activeForeground,
+  },
+});
+
+export const dragRegionStyles = (theme: Theme) =>
+  css({
+    alignItems: "center",
+    color: theme.colors.titleBar.inactiveForeground,
+    display: "flex",
+    fontSize: 12,
+    justifyContent: "center",
+    overflow: "hidden",
+    span: {
+      overflow: "hidden",
+      textOverflow: "ellipsis",
+      whiteSpace: "nowrap",
+    },
+    "[data-is-focused=true] > &": {
+      color: theme.colors.titleBar.activeForeground,
+    },
+  });
+
+export const navigationControlsContainerStyles = (theme: Theme) =>
+  css({
+    button: {
+      ...titleBarButtonStyles(theme),
+
+      "&:disabled": {
+        color: theme.colors.titleBar.inactiveForeground,
+        opacity: 0.4,
+        pointerEvents: "none",
+      },
+    },
+  });
+
 export const windowControlsContainerStyles = (theme: Theme) =>
   css({
     button: {
-      alignItems: "center",
-      appearance: "none",
-      backgroundColor: "transparent",
-      border: "none",
-      color: theme.colors.titleBar.inactiveForeground,
-      display: "inline-flex",
-      fontSize: 16,
-      height: TITLE_BAR_HEIGHT,
-      justifyContent: "center",
-      margin: 0,
-      padding: 0,
-      width: 48,
-      "&:hover": {
-        background: theme.colors.titleBar.hoverBackground,
-      },
-      "&:active": {
-        background: theme.colors.titleBar.pressedBackground,
-      },
-
-      "[data-is-focused=true] > &": {
-        color: theme.colors.titleBar.activeForeground,
-      },
+      ...titleBarButtonStyles(theme),
 
       "&[data-close-button]": {
         "&:hover": {
