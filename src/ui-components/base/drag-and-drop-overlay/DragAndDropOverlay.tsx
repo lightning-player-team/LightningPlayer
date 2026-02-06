@@ -1,6 +1,6 @@
 import { useSetAtom } from "jotai";
 import { DragEventHandler, FC, useEffect, useRef, useState } from "react";
-import { useNavigate } from "react-router";
+import { useLocation, useNavigate } from "react-router";
 import { ROUTES } from "../../../route-components/routes";
 import { inputFilesState } from "../../../shared/atoms/inputFilesState";
 import { handleInputFiles } from "../../../shared/utils/handleInputFiles";
@@ -9,10 +9,10 @@ import { DragAndDropState } from "./DragAndDropOverlay.types";
 
 export const DragAndDropOverlay: FC = () => {
   const [dragAndDropState, setDragAndDropState] = useState<DragAndDropState>(
-    DragAndDropState.None
+    DragAndDropState.None,
   );
+  const location = useLocation();
   const navigate = useNavigate();
-
   const setInputFiles = useSetAtom(inputFilesState);
   const dropZoneRef = useRef<HTMLDivElement>(null);
 
@@ -66,7 +66,10 @@ export const DragAndDropOverlay: FC = () => {
     if (files.length) {
       const filteredFiles = handleInputFiles({ files, setInputFiles });
       if (filteredFiles.length) {
-        navigate(ROUTES.player);
+        // Replace instead of push when already on the player route
+        // so there's only one player entry in history.
+        const isOnPlayer = location.pathname === ROUTES.player;
+        navigate(ROUTES.player, { replace: isOnPlayer });
       }
     }
   };
