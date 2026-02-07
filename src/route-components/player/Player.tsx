@@ -10,8 +10,8 @@ import {
 } from "mediabunny";
 import { FC, useCallback, useEffect, useRef, useState } from "react";
 import { inputFilesState } from "../../shared/atoms/inputFilesState";
-import { titleBarTextState } from "../../shared/atoms/titleBarTextState";
 import { isMutedState } from "../../shared/atoms/isMutedState";
+import { titleBarTextState } from "../../shared/atoms/titleBarTextState";
 import { volumeState } from "../../shared/atoms/volumeState";
 import { useDimensions } from "../../shared/hooks/useDimensions";
 import { IDimensions } from "../../shared/types/dimensions";
@@ -508,6 +508,7 @@ export const Player: FC = () => {
     <FullscreenContainer ref={fullscreenContainerRef}>
       <PlayerControlOverlay
         duration={duration ?? 0}
+        fullscreenContainerRef={fullscreenContainerRef}
         getThumbnail={getThumbnailCallback}
         isDraggingProgressBarRef={isDraggingProgressBarRef}
         isMuted={isMuted}

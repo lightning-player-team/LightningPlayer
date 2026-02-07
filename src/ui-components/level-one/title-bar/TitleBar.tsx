@@ -1,7 +1,6 @@
-import { TauriEvent } from "@tauri-apps/api/event";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { useAtom, useAtomValue } from "jotai";
-import { FC, MouseEventHandler, useEffect, useRef, useState } from "react";
+import { FC, MouseEventHandler, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router";
 import ArrowLeftIcon from "../../../assets/svgs/arrow-left.svg?react";
 import CloseIcon from "../../../assets/svgs/close.svg?react";
@@ -11,6 +10,8 @@ import PinIcon from "../../../assets/svgs/pin.svg?react";
 import RestoreIcon from "../../../assets/svgs/restore.svg?react";
 import UnpinIcon from "../../../assets/svgs/unpin.svg?react";
 import { ROUTES } from "../../../route-components/routes";
+import { isWindowFocusedState } from "../../../shared/atoms/isWindowFocusedState";
+import { isWindowMaximizedState } from "../../../shared/atoms/isWindowMaximizedState";
 import { titleBarPinnedState } from "../../../shared/atoms/titleBarPinnedState";
 import { titleBarTextState } from "../../../shared/atoms/titleBarTextState";
 import {
@@ -45,49 +46,11 @@ export const TitleBar: FC = () => {
   // To make sure that the hover styles persist while dragging, we use this little
   // state machine and make use of the order of the events mentioned above.
   const [isHovered, setIsHovered] = useState<HoverState>(HoverState.None);
-  const [isMaximized, setIsMaximized] = useState<boolean>(false);
-  const [isFocused, setIsFocused] = useState<boolean>(true);
+  const isFocused = useAtomValue(isWindowFocusedState);
+  const isMaximized = useAtomValue(isWindowMaximizedState);
   const [isPinned, setIsPinned] = useAtom(titleBarPinnedState);
   const maximizeButtonRef = useRef<HTMLButtonElement>(null);
   const dragRegionRef = useRef<HTMLDivElement>(null);
-
-  // Update isMaximized when Window is resized.
-  useEffect(() => {
-    const handleResize = async () => {
-      const newIsMaximized = await appWindow.isMaximized();
-      setIsMaximized(newIsMaximized);
-    };
-
-    handleResize();
-
-    const promiseUnlisten = appWindow.listen(
-      TauriEvent.WINDOW_RESIZED,
-      handleResize,
-    );
-    return () => {
-      promiseUnlisten.then((unlistenFn) => unlistenFn());
-    };
-  }, [appWindow]);
-
-  // Update isFocused when Window is focused and blurred.
-  useEffect(() => {
-    const handleFocus = async () => {
-      const newIsFocused = await appWindow.isFocused();
-      setIsFocused(newIsFocused);
-    };
-
-    handleFocus();
-
-    const unlistenFocus = appWindow.listen(
-      TauriEvent.WINDOW_FOCUS,
-      handleFocus,
-    );
-    const unlistenBlur = appWindow.listen(TauriEvent.WINDOW_BLUR, handleFocus);
-    return () => {
-      unlistenFocus.then((unlistenFn) => unlistenFn());
-      unlistenBlur.then((unlistenFn) => unlistenFn());
-    };
-  }, [appWindow]);
 
   // Event handlers to track the hovered state.
   const handleOnMouseDownTitleBar = () => {

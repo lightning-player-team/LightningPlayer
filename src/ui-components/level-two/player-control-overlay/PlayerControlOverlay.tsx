@@ -1,13 +1,4 @@
-import { TauriEvent } from "@tauri-apps/api/event";
-import { getCurrentWindow } from "@tauri-apps/api/window";
-import {
-  FC,
-  MouseEventHandler,
-  RefObject,
-  useEffect,
-  useRef,
-  useState,
-} from "react";
+import { FC, MouseEventHandler, RefObject, useRef, useState } from "react";
 import FullScreenMaximize from "../../../assets/svgs/full-screen-maximize.svg?react";
 import FullScreenMinimize from "../../../assets/svgs/full-screen-minimize.svg?react";
 import PauseIcon from "../../../assets/svgs/pause.svg?react";
@@ -48,11 +39,19 @@ export interface IPlayerControlOverlayProps {
    */
   duration: number;
   /**
+   * Used for setting fullscreen mode.
+   */
+  fullscreenContainerRef: RefObject<HTMLDivElement | null>;
+  /**
    * Fetches thumbnail URL. Passed to PreviewThumbnail.
    *
    * @param timestamp in seconds.
    */
   getThumbnail: (timestamp: number) => Promise<string | undefined>;
+  /**
+   * A ref to keep track of progress bar's drag state that doesn't trigger rerenders.
+   * progressRef and the progress bar element are not updated until dragging ends.
+   */
   isDraggingProgressBarRef: RefObject<boolean>;
   isMuted: boolean;
   isPlaying: boolean;
@@ -79,6 +78,7 @@ export interface IPlayerControlOverlayProps {
 
 export const PlayerControlOverlay: FC<IPlayerControlOverlayProps> = ({
   duration,
+  fullscreenContainerRef,
   getThumbnail,
   isDraggingProgressBarRef,
   isMuted,
@@ -91,7 +91,6 @@ export const PlayerControlOverlay: FC<IPlayerControlOverlayProps> = ({
   seek,
   volume,
 }) => {
-  const appWindow = getCurrentWindow();
   // Toggles the opacity of the whole overlay.
   const [isHovered, setIsHovered] = useState(true);
   // HoverPercentage from 0 to 1. Undefined means not hovering.
@@ -109,7 +108,6 @@ export const PlayerControlOverlay: FC<IPlayerControlOverlayProps> = ({
   // It stays pinned until the user moves outside of the left container.
   const [isVCSoftPinned, setIsVCSoftPinned] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const [restoreMaximize, setRestoreMaximize] = useState(false);
 
   const progressBarContainerRef = useRef<HTMLDivElement>(null);
   const progressBarContainerDimensions = useDimensions(progressBarContainerRef);
@@ -125,41 +123,19 @@ export const PlayerControlOverlay: FC<IPlayerControlOverlayProps> = ({
     }
   };
 
-  // Update isFullScreen when Window is resized.
-  useEffect(() => {
-    const handleResize = async () => {
-      const newIsFullScreen = await appWindow.isFullscreen();
-      setIsFullscreen(newIsFullScreen);
-    };
-
-    handleResize();
-
-    const promiseUnlisten = appWindow.listen(
-      TauriEvent.WINDOW_RESIZED,
-      handleResize,
-    );
-    return () => {
-      promiseUnlisten.then((unlistenFn) => unlistenFn());
-    };
-  }, [appWindow]);
-
+  /** Fullscreen button toggles if the player is fullscreen. */
   const handleOnClickFullscreenButton = async () => {
-    const isMaximized = await appWindow.isMaximized();
-    if (isFullscreen) {
-      await appWindow.setFullscreen(false);
-      if (restoreMaximize) {
-        appWindow.toggleMaximize();
-        setRestoreMaximize(false);
+    if (fullscreenContainerRef.current) {
+      if (!isFullscreen) {
+        fullscreenContainerRef.current.requestFullscreen();
+      } else {
+        document.exitFullscreen();
       }
-    } else {
-      if (isMaximized) {
-        await appWindow.toggleMaximize();
-        setRestoreMaximize(true);
-      }
-      appWindow.setFullscreen(true);
+      setIsFullscreen((isFullscreen) => !isFullscreen);
     }
   };
 
+  /** Settings button toggles playback settings menu. */
   const handleOnClickSettingsButton = () => {
     setIsSettingsOpen(!isSettingsOpen);
     setIsVCHardPinned(false);
