@@ -1,4 +1,4 @@
-import { css, Theme } from "@emotion/react";
+import { css, CSSObject, Theme } from "@emotion/react";
 import {
   tooltipDefaultHeight,
   tooltipDefaultMarginTop,
@@ -122,7 +122,7 @@ export const progressBarTrackFillStyles = (theme: Theme) =>
 const buttonContainerHeight = 36;
 const buttonContainerMarginTop = 8;
 
-export const buttonContainerStyles = css({
+export const buttonControlsContainerStyles = css({
   alignItems: "center",
   display: "grid",
   gridTemplateColumns: "1fr auto 1fr",
@@ -137,27 +137,27 @@ export const tooltipContainerStyles = css({
   height: "100%",
 });
 
-export const leftContainerStyles = css({
+const buttonContainerStyles: CSSObject = {
   alignItems: "center",
+  columnGap: 8,
   display: "flex",
+  flexDirection: "row",
   height: buttonContainerHeight,
-  justifySelf: "start",
   position: "relative",
+};
+
+export const leftContainerStyles = css({
+  ...buttonContainerStyles,
+  justifySelf: "start",
 });
 
 export const centerContainerStyles = css({
-  alignItems: "center",
-  display: "flex",
-  height: buttonContainerHeight,
-  position: "relative",
+  ...buttonContainerStyles,
 });
 
 export const rightContainerStyles = css({
-  alignItems: "center",
-  display: "flex",
-  height: buttonContainerHeight,
+  ...buttonContainerStyles,
   justifySelf: "end",
-  position: "relative",
 });
 
 export const playButtonStyles = (theme: Theme) =>
@@ -216,19 +216,22 @@ export const playerControlTooltipStyles = (theme: Theme) =>
     top: "auto",
   });
 
-export const settingsButtonStyles = (theme: Theme) =>
+export const bottomControlsButtonStyles = (theme: Theme) =>
   css({
     background: "transparent",
     border: "none",
     color: theme.colors.playerControls.button.color,
     cursor: "pointer",
-    fontSize: 24,
-    lineHeight: 0,
     padding: 0,
     transitionDuration: theme.motion.playerControls.button.transitionDuration,
     transitionProperty: "color, transform",
     transitionTimingFunction:
       theme.motion.playerControls.button.transitionTimingFunction,
+
+    svg: {
+      height: 24,
+      width: 24,
+    },
 
     "&:hover": {
       color: theme.colors.playerControls.button.foreground,

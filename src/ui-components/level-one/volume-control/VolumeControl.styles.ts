@@ -34,13 +34,16 @@ export const iconButtonStyles = (theme: Theme) =>
     color: theme.colors.playerControls.button.color,
     cursor: "pointer",
     flexShrink: 0,
-    fontSize: 24,
-    lineHeight: 0,
     padding: 0,
     transitionDuration: theme.motion.playerControls.button.transitionDuration,
     transitionProperty: "color, transform",
     transitionTimingFunction:
       theme.motion.playerControls.button.transitionTimingFunction,
+
+    svg: {
+      height: 24,
+      width: 24,
+    },
 
     "&:hover": {
       color: theme.colors.playerControls.button.foreground,

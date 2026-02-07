@@ -1,4 +1,4 @@
-import { css, Theme } from "@emotion/react";
+import { css, CSSObject, Theme } from "@emotion/react";
 import { ZIndex } from "../../../shared/styles/zIndex";
 import { TITLE_BAR_HEIGHT } from "./TitleBar.types";
 
@@ -28,7 +28,7 @@ export const pinnedContainerStyles = css({
   opacity: 1,
 });
 
-const titleBarButtonStyles = (theme: Theme) => ({
+const titleBarButtonStyles = (theme: Theme): CSSObject => ({
   alignItems: "center" as const,
   appearance: "none" as const,
   backgroundColor: "transparent",

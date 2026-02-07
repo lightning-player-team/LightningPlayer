@@ -1,4 +1,6 @@
 import { FC, MouseEventHandler, RefObject, useRef, useState } from "react";
+import FullScreenMaximize from "../../../assets/svgs/full-screen-maximize.svg?react";
+import FullScreenMinimize from "../../../assets/svgs/full-screen-minimize.svg?react";
 import PauseIcon from "../../../assets/svgs/pause.svg?react";
 import PlayIcon from "../../../assets/svgs/play.svg?react";
 import SettingsIcon from "../../../assets/svgs/setting.svg?react";
@@ -12,8 +14,9 @@ import { VolumeControl } from "../../level-one/volume-control/VolumeControl";
 import { getProgressFromEvent } from "./getProgressFromEvent";
 import { getProgressPercentageFromEvent } from "./getProgressPercentageFromEvent";
 import {
+  bottomControlsButtonStyles,
   bottomControlsContainerStyles,
-  buttonContainerStyles,
+  buttonControlsContainerStyles,
   centerContainerStyles,
   leftContainerStyles,
   playButtonStyles,
@@ -26,7 +29,6 @@ import {
   progressBarTrackFillStyles,
   progressBarTrackStyles,
   rightContainerStyles,
-  settingsButtonStyles,
   tooltipContainerStyles,
   topContainerStyles,
 } from "./PlayerControlOverlay.styles";
@@ -37,11 +39,19 @@ export interface IPlayerControlOverlayProps {
    */
   duration: number;
   /**
+   * Used for setting fullscreen mode.
+   */
+  fullscreenContainerRef: RefObject<HTMLDivElement | null>;
+  /**
    * Fetches thumbnail URL. Passed to PreviewThumbnail.
    *
    * @param timestamp in seconds.
    */
   getThumbnail: (timestamp: number) => Promise<string | undefined>;
+  /**
+   * A ref to keep track of progress bar's drag state that doesn't trigger rerenders.
+   * progressRef and the progress bar element are not updated until dragging ends.
+   */
   isDraggingProgressBarRef: RefObject<boolean>;
   isMuted: boolean;
   isPlaying: boolean;
@@ -68,6 +78,7 @@ export interface IPlayerControlOverlayProps {
 
 export const PlayerControlOverlay: FC<IPlayerControlOverlayProps> = ({
   duration,
+  fullscreenContainerRef,
   getThumbnail,
   isDraggingProgressBarRef,
   isMuted,
@@ -96,6 +107,7 @@ export const PlayerControlOverlay: FC<IPlayerControlOverlayProps> = ({
   // The VolumeControl is soft pinned when the user hovers over it.
   // It stays pinned until the user moves outside of the left container.
   const [isVCSoftPinned, setIsVCSoftPinned] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
 
   const progressBarContainerRef = useRef<HTMLDivElement>(null);
   const progressBarContainerDimensions = useDimensions(progressBarContainerRef);
@@ -111,6 +123,19 @@ export const PlayerControlOverlay: FC<IPlayerControlOverlayProps> = ({
     }
   };
 
+  /** Fullscreen button toggles if the player is fullscreen. */
+  const handleOnClickFullscreenButton = async () => {
+    if (fullscreenContainerRef.current) {
+      if (!isFullscreen) {
+        fullscreenContainerRef.current.requestFullscreen();
+      } else {
+        document.exitFullscreen();
+      }
+      setIsFullscreen((isFullscreen) => !isFullscreen);
+    }
+  };
+
+  /** Settings button toggles playback settings menu. */
   const handleOnClickSettingsButton = () => {
     setIsSettingsOpen(!isSettingsOpen);
     setIsVCHardPinned(false);
@@ -281,7 +306,7 @@ export const PlayerControlOverlay: FC<IPlayerControlOverlayProps> = ({
           <div css={progressbarThumbStyles} id="progress-bar-thumb" />
         </div>
         {/* Button controls */}
-        <div css={buttonContainerStyles}>
+        <div css={buttonControlsContainerStyles}>
           <div
             onMouseLeave={handleOnMouseLeaveLeftContainer}
             css={leftContainerStyles}
@@ -319,12 +344,27 @@ export const PlayerControlOverlay: FC<IPlayerControlOverlayProps> = ({
               boundsRef={progressBarContainerRef}
               css={tooltipContainerStyles}
               // showTooltip={true}
+              text={isFullscreen ? "Exit Full Screen" : "Full Screen"}
+              tooltipStylesOverride={playerControlTooltipStyles}
+            >
+              <button
+                aria-label={isFullscreen ? "Exit Full Screen" : "Full Screen"}
+                css={bottomControlsButtonStyles}
+                onClick={handleOnClickFullscreenButton}
+              >
+                {isFullscreen ? <FullScreenMinimize /> : <FullScreenMaximize />}
+              </button>
+            </Tooltip>
+            <Tooltip
+              boundsRef={progressBarContainerRef}
+              css={tooltipContainerStyles}
+              // showTooltip={true}
               text="Settings"
               tooltipStylesOverride={playerControlTooltipStyles}
             >
               <button
                 aria-label="Settings"
-                css={settingsButtonStyles}
+                css={bottomControlsButtonStyles}
                 onClick={handleOnClickSettingsButton}
               >
                 <SettingsIcon />
